@@ -85,51 +85,46 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;bor
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+
 function thermalEsc(x){
   return String(x ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
+
 function printThermalSummary(){
-  const c=cur();
-  if(!c) return alert("Select a case first.");
+  try {
+    const c=cur();
+    if(!c){ alert("Select a case first."); return; }
 
-  const suspects=c.suspects||[];
-  const people=c.people||[];
-  const statements=c.statements||[];
-  const evidence=c.evidence||[];
+    const suspects=c.suspects||[];
+    const people=c.people||[];
+    const statements=c.statements||[];
+    const evidence=c.evidence||[];
 
-  let out="";
-  out += `<h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1>`;
-  out += `<div class="thermal-row"><span class="thermal-label">Case:</span> ${thermalEsc(c.number)}</div>`;
-  out += `<div class="thermal-row"><span class="thermal-label">Title:</span> ${thermalEsc(c.title||"Untitled case")}</div>`;
-  out += `<div class="thermal-row"><span class="thermal-label">Status:</span> ${thermalEsc(c.status)}</div>`;
-  out += `<div class="thermal-row"><span class="thermal-label">Priority:</span> ${thermalEsc(c.priority)}</div>`;
-  out += `<div class="thermal-row"><span class="thermal-label">Category:</span> ${thermalEsc(c.category)}</div>`;
-  out += `<div class="thermal-row"><span class="thermal-label">Investigator:</span> ${thermalEsc(c.investigator)}</div>`;
-  out += `<div class="thermal-row"><span class="thermal-label">Opened:</span> ${thermalEsc(c.opened)}</div>`;
-  out += `<div class="thermal-sep"></div>`;
+    let out="";
+    out += `<h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1>`;
+    out += `<div><b>Case:</b> ${thermalEsc(c.number)}</div>`;
+    out += `<div><b>Title:</b> ${thermalEsc(c.title||"Untitled case")}</div>`;
+    out += `<div><b>Status:</b> ${thermalEsc(c.status)}</div>`;
+    out += `<div><b>Priority:</b> ${thermalEsc(c.priority)}</div>`;
+    out += `<div><b>Category:</b> ${thermalEsc(c.category)}</div>`;
+    out += `<div><b>Investigator:</b> ${thermalEsc(c.investigator)}</div>`;
+    out += `<hr><h2>CASE SUMMARY</h2>`;
+    out += `<p>${thermalEsc(c.summary||"No case summary recorded.")}</p>`;
 
-  out += `<h2>CASE SUMMARY</h2>`;
-  out += `<p>${thermalEsc(c.summary||"No case summary recorded.")}</p>`;
-
-  out += `<h2>SUSPECTS (${suspects.length})</h2>`;
-  if(!suspects.length){
-    out += `<p>No suspects recorded.</p>`;
-  } else {
+    out += `<h2>SUSPECTS (${suspects.length})</h2>`;
+    if(!suspects.length) out += `<p>No suspects recorded.</p>`;
     suspects.forEach((s,i)=>{
       out += `<p><b>${i+1}. ${thermalEsc(s.name||"Unnamed")}</b><br>`;
-      out += `Status: ${thermalEsc(s.status)}<br>`;
+      if(s.status) out += `Status: ${thermalEsc(s.status)}<br>`;
       if(s.dob) out += `DOB: ${thermalEsc(s.dob)}<br>`;
       if(s.offence) out += `Offence: ${thermalEsc(s.offence)}<br>`;
       if(s.address) out += `Address: ${thermalEsc(s.address)}<br>`;
       if(s.info) out += `Info: ${thermalEsc(s.info)}`;
       out += `</p>`;
     });
-  }
 
-  out += `<h2>PEOPLE / WITNESSES (${people.length})</h2>`;
-  if(!people.length){
-    out += `<p>No people recorded.</p>`;
-  } else {
+    out += `<h2>PEOPLE / WITNESSES (${people.length})</h2>`;
+    if(!people.length) out += `<p>No people recorded.</p>`;
     people.forEach((p,i)=>{
       out += `<p><b>${i+1}. ${thermalEsc(p.name||"Unnamed")}</b><br>`;
       out += `Type: ${thermalEsc(p.type)}<br>`;
@@ -137,25 +132,17 @@ function printThermalSummary(){
       if(p.contact) out += `Contact: ${thermalEsc(p.contact)}`;
       out += `</p>`;
     });
-  }
 
-  out += `<h2>STATEMENTS (${statements.length})</h2>`;
-  if(!statements.length){
-    out += `<p>No statements recorded.</p>`;
-  } else {
+    out += `<h2>STATEMENTS (${statements.length})</h2>`;
+    if(!statements.length) out += `<p>No statements recorded.</p>`;
     statements.forEach(s=>{
       out += `<p><b>${thermalEsc(s.number||"Statement")}</b><br>`;
-      out += `From: ${thermalEsc(s.person)}<br>`;
-      out += `Date: ${thermalEsc(s.date)}<br>`;
-      out += `Officer: ${thermalEsc(s.officer)}<br>`;
-      out += `${thermalEsc(s.text)}</p>`;
+      out += `From: ${thermalEsc(s.person)}<br>Date: ${thermalEsc(s.date)}<br>`;
+      out += `Officer: ${thermalEsc(s.officer)}<br>${thermalEsc(s.text)}</p>`;
     });
-  }
 
-  out += `<h2>EVIDENCE (${evidence.length})</h2>`;
-  if(!evidence.length){
-    out += `<p>No evidence recorded.</p>`;
-  } else {
+    out += `<h2>EVIDENCE (${evidence.length})</h2>`;
+    if(!evidence.length) out += `<p>No evidence recorded.</p>`;
     evidence.forEach(e=>{
       out += `<p><b>${thermalEsc(e.id||"Evidence")}</b><br>`;
       out += `Description: ${thermalEsc(e.desc)}<br>`;
@@ -167,21 +154,48 @@ function printThermalSummary(){
       if(e.notes) out += `Notes: ${thermalEsc(e.notes)}`;
       out += `</p>`;
     });
+
+    const w=window.open("", "_blank", "width=400,height=700");
+    if(!w){
+      alert("The print window was blocked by your browser. Please allow pop-ups for this site and try again.");
+      return;
+    }
+
+    w.document.open();
+    w.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${thermalEsc(c.number)} - 80mm Case Summary</title>
+<style>
+@page{size:80mm auto;margin:0}
+html,body{margin:0;padding:0;background:#fff;color:#000}
+body{width:72mm;margin:0 auto;padding:3mm 2mm;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.25}
+h1{text-align:center;font-size:15pt;margin:0 0 4mm}
+h2{font-size:11pt;border-bottom:1px solid #000;padding-bottom:1mm;margin:4mm 0 2mm}
+p{margin:2mm 0;white-space:pre-wrap;overflow-wrap:anywhere}
+hr{border:0;border-top:1px dashed #000;margin:3mm 0}
+</style>
+</head>
+<body>${out}
+<hr><p>Printed: ${thermalEsc(new Date().toLocaleString())}</p>
+<script>
+window.addEventListener("load",function(){
+  setTimeout(function(){ window.print(); },300);
+});
+window.addEventListener("afterprint",function(){
+  setTimeout(function(){ window.close(); },300);
+});
+<\/script>
+</body></html>`);
+    w.document.close();
+    w.focus();
+  } catch(e) {
+    alert("Unable to open the print window: " + e.message);
+    console.error(e);
   }
-
-  out += `<div class="thermal-sep"></div>`;
-  out += `<p>Printed: ${thermalEsc(new Date().toLocaleString())}</p>`;
-
-  document.getElementById("thermalPrintArea").innerHTML=out;
-  document.body.classList.add("thermal-mode");
-
-  const cleanup=()=>{
-    document.body.classList.remove("thermal-mode");
-    window.removeEventListener("afterprint",cleanup);
-  };
-  window.addEventListener("afterprint",cleanup);
-  setTimeout(()=>window.print(),100);
 }
+
 </script>
 <script>
 const SUPABASE_URL = "https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
@@ -192,7 +206,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 <body>
 <header><div class="brand">Vibe-Holdings Case Management<small>Local Investigation Database</small></div><button onclick="newCase()" class="primary">+ New Case</button></header>
 <div class="layout"><aside><input id="search" class="search" placeholder="Search cases..." oninput="drawCases()"><div id="cases"></div></aside><main id="app"><div class="empty">Create a case to begin.</div></main></div>
-<div id="thermalPrintArea" class="thermal-print-only"></div>
+<div id="thermalPrintArea" style="display:none"></div>
   <div id="modal" class="modal"><div class="modalbox"><div class="row"><h2 id="modalTitle">Edit Record</h2><button class="secondary" onclick="closeModal()">Close</button></div><div id="modalBody"></div><div class="actions"><button class="primary" onclick="saveModal()">Save Changes</button><button class="secondary" onclick="closeModal()">Cancel</button></div></div></div>
 <script>
 const DB="VibeHoldingsCaseDB",STORE="cases";let db,cases=[],selected=null,tab="overview",editing=null;
