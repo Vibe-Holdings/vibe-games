@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vibe-Holdings Local Case Database</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#eef2f6;color:#17212b}
+header{background:#102a43;color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:800;font-size:20px}.brand small{display:block;font-size:11px;color:#c7d5e0;margin-top:3px}
+button{border:0;border-radius:7px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:#173f5f;color:white}.secondary{background:#e7edf2;color:#173047}.danger{background:#fee2e2;color:#991b1b}
+.layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 70px)}aside{background:#fff;border-right:1px solid #d7dee5;padding:16px}
+input,select,textarea{width:100%;border:1px solid #cbd4dd;border-radius:7px;padding:10px;font:inherit;background:#fff}.search{margin-bottom:12px}
+.case{padding:13px;border:1px solid #dce2e8;border-radius:8px;margin-bottom:9px;cursor:pointer}.case.active{border-color:#173f5f;background:#f3f8fc}.case b{display:block}.muted{font-size:12px;color:#687585}
+main{padding:24px;max-width:1400px;width:100%;margin:auto}.row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.card{background:white;border:1px solid #dce2e8;border-radius:10px;padding:20px;margin:0 0 18px;box-shadow:0 2px 5px #00000008}
+h1{margin:0 0 5px;font-size:25px}h2{font-size:18px;margin:0 0 15px}h3{font-size:14px;margin:0 0 8px}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0}.tab{background:#dce5ed;color:#173047}.tab.active{background:#173f5f;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.full{grid-column:1/-1}label{font-size:12px;font-weight:700;display:block;margin:0 0 5px}
+textarea{min-height:130px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.badge{display:inline-block;padding:4px 8px;border-radius:12px;font-size:10px;font-weight:800;margin:5px 4px 0 0}.open{background:#dcfce7;color:#166534}.progress{background:#dbeafe;color:#1d4ed8}.closed{background:#e5e7eb;color:#374151}.high{background:#fee2e2;color:#991b1b}.medium{background:#fef3c7;color:#92400e}.low{background:#dcfce7;color:#166534}
+.record{border:1px solid #dde3e8;border-radius:8px;padding:14px;margin-bottom:10px}.record p{white-space:pre-wrap}.empty{text-align:center;color:#6b7280;padding:35px}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.show{display:flex}.modalbox{background:#fff;width:min(760px,100%);max-height:90vh;overflow:auto;border-radius:12px;padding:22px}
+.timeline{border-left:3px solid #a9b8c5;margin-left:12px;padding-left:22px}.event{position:relative;background:#fff;border:1px solid #dce2e8;border-radius:9px;padding:14px;margin-bottom:14px}.event:before{content:"";position:absolute;width:11px;height:11px;border-radius:50%;background:#173f5f;border:3px solid #eef2f6;left:-31px;top:17px}.event .date{font-size:11px;color:#687585;font-weight:700}.event .type{font-size:11px;color:#173f5f;font-weight:800;text-transform:uppercase;margin:4px 0}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #e5e7eb;font-size:13px;vertical-align:top}th{background:#f6f8fa;font-size:11px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid #d7dee5}.grid,.three{grid-template-columns:1fr}.full{grid-column:auto}main{padding:14px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+</head>
+<body>
+<header><div class="brand">Vibe-Holdings Case Management<small>Local Investigation Database</small></div><button onclick="newCase()" class="primary">+ New Case</button></header>
+<div class="layout"><aside><input id="search" class="search" placeholder="Search cases..." oninput="drawCases()"><div id="cases"></div></aside><main id="app"><div class="empty">Create a case to begin.</div></main></div>
+<div id="modal" class="modal"><div class="modalbox"><div class="row"><h2 id="modalTitle">Edit Record</h2><button class="secondary" onclick="closeModal()">Close</button></div><div id="modalBody"></div><div class="actions"><button class="primary" onclick="saveModal()">Save Changes</button><button class="secondary" onclick="closeModal()">Cancel</button></div></div></div>
+<script>
+const DB="VibeHoldingsCaseDB",STORE="cases";let db,cases=[],selected=null,tab="overview",editing=null;
+const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const now=()=>new Date().toLocaleString(),v=id=>document.getElementById(id)?.value.trim()||"",cur=()=>cases.find(c=>c.id===selected);
+async function load(){
+  const {data,error}=await supabaseClient.from("cases").select("*").order("created_at",{ascending:false});
+  if(error) throw error;
+  cases=(data||[]).map(c=>({...c,suspects:c.suspects||[],people:c.people||[],statements:c.statements||[],notes:c.notes||[],evidence:c.evidence||[],events:c.events||[]}));
+}
+async function put(c){
+  const {error}=await supabaseClient.from("cases").upsert({
+    id:c.id,number:c.number,title:c.title,status:c.status,priority:c.priority,
+    category:c.category,investigator:c.investigator,opened:c.opened,updated:c.updated,
+    summary:c.summary,suspects:c.suspects||[],people:c.people||[],statements:c.statements||[],
+    notes:c.notes||[],evidence:c.evidence||[],events:c.events||[]
+  });
+  if(error) throw error;
+}
+async function delDB(id){
+  const {error}=await supabaseClient.from("cases").delete().eq("id",id);
+  if(error) throw error;
+}
+function field(label,id,value="",area=false){return `<div class="${area?"full":""}"><label>${label}</label>${area?`<textarea id="${id}">${esc(value)}</textarea>`:`<input id="${id}" value="${esc(value)}">`}</div>`}
+function selectField(label,id,opts,value){return `<div><label>${label}</label><select id="${id}">${opts.map(x=>`<option ${x===value?"selected":""}>${esc(x)}</option>`).join("")}</select></div>`}
+
+async function newCase(){let c={id:crypto.randomUUID(),number:"CASE-"+Math.floor(100000+Math.random()*900000),title:"",status:"Open",priority:"Medium",category:"",investigator:"",opened:now(),updated:now(),summary:"",suspects:[],people:[],statements:[],notes:[],evidence:[],events:[]};cases.unshift(c);selected=c.id;await put(c);tab="overview";draw()}
+function drawCases(){let q=(document.getElementById("search")?.value||"").toLowerCase();let a=cases.filter(c=>(c.number+" "+c.title+" "+c.investigator+" "+c.category).toLowerCase().includes(q));document.getElementById("cases").innerHTML=a.length?a.map(c=>`<div class="case ${c.id===selected?"active":""}" onclick="selectCase('${c.id}')"><b>${esc(c.number)}</b>${esc(c.title||"Untitled case")}<br><span class="muted">${esc(c.investigator||"No investigator")}</span><br><span class="badge ${c.status==="Closed"?"closed":c.status==="In Progress"?"progress":"open"}">${esc(c.status)}</span><span class="badge ${c.priority==="High"?"high":c.priority==="Low"?"low":"medium"}">${esc(c.priority)}</span></div>`).join(""):'<div class="empty">No cases.</div>'}
+function selectCase(id){selected=id;tab="overview";draw()}function setTab(t){tab=t;draw()}
+
+function record(type,title,body,kind,i){return `<div class="record"><div class="muted">${esc(type)}</div><h3>${esc(title||"Unnamed")}</h3><p>${esc(body||"").replace(/&lt;br&gt;/g,"<br>")}</p><div class="actions"><button class="secondary" onclick="editRecord('${kind}',${i})">Edit</button><button class="danger" onclick="deleteRecord('${kind}',${i})">Delete</button></div></div>`}
+
+function overview(c){return `<div class="card"><h2>Case Information</h2><div class="grid three">${field("Case Number","f_number",c.number)}${field("Case Title","f_title",c.title)}${selectField("Status","f_status",["Open","In Progress","Closed"],c.status)}${selectField("Priority","f_priority",["Low","Medium","High"],c.priority)}${field("Category / Offence","f_category",c.category)}${field("Lead Investigator","f_investigator",c.investigator)}${field("Date Opened","f_opened",c.opened)}${field("Last Updated","f_updated",c.updated)}</div><div class="actions"><button class="primary" onclick="saveOverview()">Save Case Details</button></div></div><div class="card"><h2>Case Summary</h2>${field("","f_summary",c.summary,true)}<div class="actions"><button class="primary" onclick="saveSummary()">Save Summary</button></div></div><div class="card"><h2>Database</h2><p class="muted">Cases are stored in the connected Supabase database and are available across devices using this database.</p></div>`}
+async function saveOverview(){let c=cur();["number","title","status","priority","category","investigator","opened","updated"].forEach(k=>c[k]=v("f_"+k));await put(c);await load();draw()}
+async function saveSummary(){let c=cur();c.summary=v("f_summary");c.updated=now();await put(c);await load();draw()}
+
+function suspects(c){return `<div class="card"><h2>Add Suspect</h2><div class="grid three">${field("Full Name","s_name")}${field("Date of Birth","s_dob")}${selectField("Status","s_status",["Person of Interest","Suspect","Charged","Arrested","Released"],"Suspect")}${field("Address","s_address")}${field("Alleged Offence","s_offence")}${field("Additional Information","s_info")}</div><div class="actions"><button class="primary" onclick="addSuspect()">Add Suspect</button></div></div><div class="card"><h2>Suspects</h2>${c.suspects.map((x,i)=>record("Suspect",x.name,`DOB: ${x.dob}<br>Status: ${x.status}<br>Offence: ${x.offence}<br>Address: ${x.address}<br>${x.info}`,"suspects",i)).join("")||'<div class="empty">No suspects.</div>'}</div>`}
+async function addSuspect(){let c=cur();c.suspects.push({name:v("s_name"),dob:v("s_dob"),status:v("s_status"),address:v("s_address"),offence:v("s_offence"),info:v("s_info")});c.updated=now();await put(c);await load();draw()}
+
+function people(c){return `<div class="card"><h2>Add Person / Witness</h2><div class="grid three">${field("Full Name","p_name")}${selectField("Type","p_type",["Witness","Victim","Reporting Person","Other"],"Witness")}${field("Contact Details","p_contact")}${field("Relationship to Case","p_relation")}</div><div class="actions"><button class="primary" onclick="addPerson()">Add Person</button></div></div><div class="card"><h2>Persons / Witnesses</h2>${c.people.map((x,i)=>record(x.type,x.name,`Contact: ${x.contact}<br>Relationship: ${x.relation}`,"people",i)).join("")||'<div class="empty">No people.</div>'}</div>`}
+async function addPerson(){let c=cur();c.people.push({name:v("p_name"),type:v("p_type"),contact:v("p_contact"),relation:v("p_relation")});c.updated=now();await put(c);await load();draw()}
+
+function statements(c){return `<div class="card"><h2>Add Statement</h2><div class="grid">${field("Statement Number","st_number","ST-"+String(c.statements.length+1).padStart(3,"0"))}${field("Statement Taken From","st_person")}${field("Date / Time","st_date",now())}${field("Officer / Staff","st_officer",c.investigator)}${field("Statement","st_text","",true)}</div><div class="actions"><button class="primary" onclick="addStatement()">Save Statement</button></div></div><div class="card"><h2>Statements</h2>${c.statements.map((x,i)=>record("Statement",x.number,`Taken from: ${x.person}<br>Date: ${x.date}<br>Officer: ${x.officer}<br>${x.text}`,"statements",i)).join("")||'<div class="empty">No statements.</div>'}</div>`}
+async function addStatement(){let c=cur();c.statements.push({number:v("st_number"),person:v("st_person"),date:v("st_date"),officer:v("st_officer"),text:v("st_text")});c.updated=now();await put(c);await load();draw()}
+
+function notes(c){return `<div class="card"><h2>Add Case Note</h2><div class="grid">${field("Officer / Staff","n_officer",c.investigator)}${field("Date / Time","n_date",now())}${field("Case Note","n_text","",true)}</div><div class="actions"><button class="primary" onclick="addNote()">Add Note</button></div></div><div class="card"><h2>Case Notes</h2>${c.notes.map((x,i)=>record("Case Note",`${x.officer} — ${x.date}`,x.text,"notes",i)).join("")||'<div class="empty">No notes.</div>'}</div>`}
+async function addNote(){let c=cur();c.notes.push({officer:v("n_officer"),date:v("n_date"),text:v("n_text")});c.updated=now();await put(c);await load();draw()}
+
+function evidence(c){return `<div class="card"><h2>Add Evidence</h2><div class="grid three">${field("Evidence ID","e_id","EV-"+String(c.evidence.length+1).padStart(3,"0"))}${field("Description","e_desc")}${selectField("Type","e_type",["Physical","Digital","Photograph","Document","Video","Audio","Other"],"Physical")}${field("Collected By","e_collected")}${field("Date / Time Collected","e_date",now())}${field("Location Found","e_location")}${field("Storage / Evidence Location","e_storage")}${field("Chain of Custody / Notes","e_notes","",true)}</div><div class="actions"><button class="primary" onclick="addEvidence()">Add Evidence</button></div></div><div class="card"><h2>Evidence Register</h2>${c.evidence.length?`<table><tr><th>ID</th><th>Description</th><th>Type</th><th>Collected</th><th>Location</th><th>Storage</th><th>Actions</th></tr>${c.evidence.map((x,i)=>`<tr><td>${esc(x.id)}</td><td>${esc(x.desc)}<br>${esc(x.notes)}</td><td>${esc(x.type)}</td><td>${esc(x.collected)}<br>${esc(x.date)}</td><td>${esc(x.location)}</td><td>${esc(x.storage)}</td><td><button class="secondary" onclick="editRecord('evidence',${i})">Edit</button><button class="danger" onclick="deleteRecord('evidence',${i})">Delete</button></td></tr>`).join("")}</table>`:'<div class="empty">No evidence.</div>'}</div>`}
+async function addEvidence(){let c=cur();c.evidence.push({id:v("e_id"),desc:v("e_desc"),type:v("e_type"),collected:v("e_collected"),date:v("e_date"),location:v("e_location"),storage:v("e_storage"),notes:v("e_notes")});c.updated=now();await put(c);await load();draw()}
+
+function timeline(c){
+ let e=[...(c.events||[])].map((x,i)=>({...x,manual:true,index:i}));
+ c.statements.forEach(x=>e.push({date:x.date,type:"Statement",title:x.number+" — "+x.person,details:x.text}));
+ c.notes.forEach(x=>e.push({date:x.date,type:"Case Note",title:x.officer,details:x.text}));
+ c.evidence.forEach(x=>e.push({date:x.date,type:"Evidence",title:x.id+" — "+x.desc,details:x.type+" • Found: "+x.location}));
+ e.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ return `<div class="card"><h2>Real Case Timeline</h2><p class="muted">Events are displayed in date/time order. Statements, notes and evidence are automatically shown here.</p><div class="card"><h3>Add Investigation Event</h3><div class="grid three">${field("Date / Time","t_date",now())}${field("Event Type","t_type","Investigation")}${field("Officer / Staff","t_officer",c.investigator)}${field("Description","t_text","",true)}</div><div class="actions"><button class="primary" onclick="addEvent()">Add Timeline Event</button></div></div><div class="timeline">${e.map(x=>`<div class="event"><div class="date">${esc(x.date||"Date not recorded")}</div><div class="type">${esc(x.type)}</div><h3>${esc(x.title||"Event")}</h3><div>${esc(x.details||"")}</div>${x.manual?`<div class="actions"><button class="danger" onclick="deleteEvent(${x.index})">Delete Event</button></div>`:""}</div>`).join("")||'<div class="empty">No timeline events.</div>'}</div></div>`
+}
+async function addEvent(){let c=cur();if(!v("t_text"))return alert("Enter an event description.");c.events.push({date:v("t_date")||now(),type:v("t_type")||"Investigation",title:v("t_officer")||"Staff",details:v("t_text")});await put(c);await load();draw()}
+async function deleteEvent(i){let c=cur();if(confirm("Delete this event?")){c.events.splice(i,1);await put(c);await load();draw()}}
+
+function editRecord(type,i){
+ let x=cur()[type][i],map={suspects:["name","dob","status","address","offence","info"],people:["name","type","contact","relation"],statements:["number","person","date","officer","text"],notes:["officer","date","text"],evidence:["id","desc","type","collected","date","location","storage","notes"]};
+ editing={type,i};document.getElementById("modalTitle").textContent="Edit "+type.slice(0,-1);
+ document.getElementById("modalBody").innerHTML='<div class="grid">'+map[type].map(k=>field(k.replace(/^\w/,z=>z.toUpperCase()).replace("_"," "), "m_"+k,x[k]||"",["text","info","notes"].includes(k))).join("")+'</div>';
+ document.getElementById("modal").classList.add("show");
+}
+async function saveModal(){let c=cur(),x=c[editing.type][editing.i],map={suspects:["name","dob","status","address","offence","info"],people:["name","type","contact","relation"],statements:["number","person","date","officer","text"],notes:["officer","date","text"],evidence:["id","desc","type","collected","date","location","storage","notes"]};map[editing.type].forEach(k=>x[k]=v("m_"+k));c.updated=now();await put(c);await load();closeModal();draw()}
+function closeModal(){document.getElementById("modal").classList.remove("show");editing=null}
+async function deleteRecord(type,i){if(confirm("Delete this record?")){let c=cur();c[type].splice(i,1);await put(c);await load();draw()}}
+async function deleteCase(){if(confirm("Delete this case and all its records?")){await delDB(selected);selected=null;await load();draw()}}
+
+function draw(){drawCases();let c=cur();if(!c)return;document.getElementById("app").innerHTML=`<div class="row"><div><h1>${esc(c.number)}</h1><div class="muted">${esc(c.title||"Untitled case")}</div></div><div class="actions"><button class="secondary" onclick="window.print()">Print / PDF</button><button class="danger" onclick="deleteCase()">Delete Case</button></div></div><div class="tabs">${["overview","suspects","people","statements","notes","evidence","timeline"].map(t=>`<button class="tab ${tab===t?"active":""}" onclick="setTab('${t}')">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}</div>${({overview,suspects,people,statements,notes,evidence,timeline}[tab])(c)}`}
+(async()=>{try{await load();draw()}catch(e){document.getElementById("app").innerHTML="<div class='card'><h2>Database error</h2><p>"+esc(e.message)+"</p></div>"}})();
+</script>
+</body>
+</html>
