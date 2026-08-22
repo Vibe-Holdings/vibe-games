@@ -21,8 +21,168 @@ textarea{min-height:130px;resize:vertical}.actions{display:flex;gap:8px;flex-wra
 .timeline{border-left:3px solid #a9b8c5;margin-left:12px;padding-left:22px}.event{position:relative;background:#fff;border:1px solid #dce2e8;border-radius:9px;padding:14px;margin-bottom:14px}.event:before{content:"";position:absolute;width:11px;height:11px;border-radius:50%;background:#173f5f;border:3px solid #eef2f6;left:-31px;top:17px}.event .date{font-size:11px;color:#687585;font-weight:700}.event .type{font-size:11px;color:#173f5f;font-weight:800;text-transform:uppercase;margin:4px 0}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #e5e7eb;font-size:13px;vertical-align:top}th{background:#f6f8fa;font-size:11px}
 @media(max-width:900px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid #d7dee5}.grid,.three{grid-template-columns:1fr}.full{grid-column:auto}main{padding:14px}}
+
+@media print {
+  .thermal-print-only { display: none !important; }
+}
+.thermal-print-only {
+  display:none;
+}
+@media print {
+  body.thermal-mode {
+    background:#fff !important;
+    width:80mm !important;
+    margin:0 !important;
+    padding:0 !important;
+  }
+  body.thermal-mode > *:not(#thermalPrintArea) {
+    display:none !important;
+  }
+  body.thermal-mode #thermalPrintArea {
+    display:block !important;
+    width:72mm !important;
+    margin:0 auto !important;
+    padding:3mm 2mm !important;
+    font-family:Arial,Helvetica,sans-serif !important;
+    color:#000 !important;
+    background:#fff !important;
+    font-size:10pt !important;
+    line-height:1.25 !important;
+  }
+  body.thermal-mode #thermalPrintArea * {
+    color:#000 !important;
+    background:#fff !important;
+    box-shadow:none !important;
+    text-shadow:none !important;
+  }
+  body.thermal-mode #thermalPrintArea h1 {
+    font-size:15pt !important;
+    text-align:center !important;
+    margin:0 0 3mm !important;
+  }
+  body.thermal-mode #thermalPrintArea h2 {
+    font-size:11pt !important;
+    border-bottom:1px solid #000 !important;
+    padding-bottom:1mm !important;
+    margin:3mm 0 2mm !important;
+  }
+  body.thermal-mode #thermalPrintArea p {
+    margin:1.5mm 0 !important;
+    white-space:pre-wrap !important;
+    overflow-wrap:anywhere !important;
+  }
+  body.thermal-mode #thermalPrintArea .thermal-row {
+    margin-bottom:1.5mm !important;
+    overflow-wrap:anywhere !important;
+  }
+  body.thermal-mode #thermalPrintArea .thermal-label {
+    font-weight:700 !important;
+  }
+  body.thermal-mode #thermalPrintArea .thermal-sep {
+    border-top:1px dashed #000 !important;
+    margin:2mm 0 !important;
+  }
+}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+function thermalEsc(x){
+  return String(x ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function printThermalSummary(){
+  const c=cur();
+  if(!c) return alert("Select a case first.");
+
+  const suspects=c.suspects||[];
+  const people=c.people||[];
+  const statements=c.statements||[];
+  const evidence=c.evidence||[];
+
+  let out="";
+  out += `<h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1>`;
+  out += `<div class="thermal-row"><span class="thermal-label">Case:</span> ${thermalEsc(c.number)}</div>`;
+  out += `<div class="thermal-row"><span class="thermal-label">Title:</span> ${thermalEsc(c.title||"Untitled case")}</div>`;
+  out += `<div class="thermal-row"><span class="thermal-label">Status:</span> ${thermalEsc(c.status)}</div>`;
+  out += `<div class="thermal-row"><span class="thermal-label">Priority:</span> ${thermalEsc(c.priority)}</div>`;
+  out += `<div class="thermal-row"><span class="thermal-label">Category:</span> ${thermalEsc(c.category)}</div>`;
+  out += `<div class="thermal-row"><span class="thermal-label">Investigator:</span> ${thermalEsc(c.investigator)}</div>`;
+  out += `<div class="thermal-row"><span class="thermal-label">Opened:</span> ${thermalEsc(c.opened)}</div>`;
+  out += `<div class="thermal-sep"></div>`;
+
+  out += `<h2>CASE SUMMARY</h2>`;
+  out += `<p>${thermalEsc(c.summary||"No case summary recorded.")}</p>`;
+
+  out += `<h2>SUSPECTS (${suspects.length})</h2>`;
+  if(!suspects.length){
+    out += `<p>No suspects recorded.</p>`;
+  } else {
+    suspects.forEach((s,i)=>{
+      out += `<p><b>${i+1}. ${thermalEsc(s.name||"Unnamed")}</b><br>`;
+      out += `Status: ${thermalEsc(s.status)}<br>`;
+      if(s.dob) out += `DOB: ${thermalEsc(s.dob)}<br>`;
+      if(s.offence) out += `Offence: ${thermalEsc(s.offence)}<br>`;
+      if(s.address) out += `Address: ${thermalEsc(s.address)}<br>`;
+      if(s.info) out += `Info: ${thermalEsc(s.info)}`;
+      out += `</p>`;
+    });
+  }
+
+  out += `<h2>PEOPLE / WITNESSES (${people.length})</h2>`;
+  if(!people.length){
+    out += `<p>No people recorded.</p>`;
+  } else {
+    people.forEach((p,i)=>{
+      out += `<p><b>${i+1}. ${thermalEsc(p.name||"Unnamed")}</b><br>`;
+      out += `Type: ${thermalEsc(p.type)}<br>`;
+      if(p.relation) out += `Relationship: ${thermalEsc(p.relation)}<br>`;
+      if(p.contact) out += `Contact: ${thermalEsc(p.contact)}`;
+      out += `</p>`;
+    });
+  }
+
+  out += `<h2>STATEMENTS (${statements.length})</h2>`;
+  if(!statements.length){
+    out += `<p>No statements recorded.</p>`;
+  } else {
+    statements.forEach(s=>{
+      out += `<p><b>${thermalEsc(s.number||"Statement")}</b><br>`;
+      out += `From: ${thermalEsc(s.person)}<br>`;
+      out += `Date: ${thermalEsc(s.date)}<br>`;
+      out += `Officer: ${thermalEsc(s.officer)}<br>`;
+      out += `${thermalEsc(s.text)}</p>`;
+    });
+  }
+
+  out += `<h2>EVIDENCE (${evidence.length})</h2>`;
+  if(!evidence.length){
+    out += `<p>No evidence recorded.</p>`;
+  } else {
+    evidence.forEach(e=>{
+      out += `<p><b>${thermalEsc(e.id||"Evidence")}</b><br>`;
+      out += `Description: ${thermalEsc(e.desc)}<br>`;
+      out += `Type: ${thermalEsc(e.type)}<br>`;
+      out += `Collected by: ${thermalEsc(e.collected)}<br>`;
+      out += `Date: ${thermalEsc(e.date)}<br>`;
+      out += `Found: ${thermalEsc(e.location)}<br>`;
+      out += `Storage: ${thermalEsc(e.storage)}<br>`;
+      if(e.notes) out += `Notes: ${thermalEsc(e.notes)}`;
+      out += `</p>`;
+    });
+  }
+
+  out += `<div class="thermal-sep"></div>`;
+  out += `<p>Printed: ${thermalEsc(new Date().toLocaleString())}</p>`;
+
+  document.getElementById("thermalPrintArea").innerHTML=out;
+  document.body.classList.add("thermal-mode");
+
+  const cleanup=()=>{
+    document.body.classList.remove("thermal-mode");
+    window.removeEventListener("afterprint",cleanup);
+  };
+  window.addEventListener("afterprint",cleanup);
+  setTimeout(()=>window.print(),100);
+}
+</script>
 <script>
 const SUPABASE_URL = "https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
@@ -32,7 +192,8 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 <body>
 <header><div class="brand">Vibe-Holdings Case Management<small>Local Investigation Database</small></div><button onclick="newCase()" class="primary">+ New Case</button></header>
 <div class="layout"><aside><input id="search" class="search" placeholder="Search cases..." oninput="drawCases()"><div id="cases"></div></aside><main id="app"><div class="empty">Create a case to begin.</div></main></div>
-<div id="modal" class="modal"><div class="modalbox"><div class="row"><h2 id="modalTitle">Edit Record</h2><button class="secondary" onclick="closeModal()">Close</button></div><div id="modalBody"></div><div class="actions"><button class="primary" onclick="saveModal()">Save Changes</button><button class="secondary" onclick="closeModal()">Cancel</button></div></div></div>
+<div id="thermalPrintArea" class="thermal-print-only"></div>
+  <div id="modal" class="modal"><div class="modalbox"><div class="row"><h2 id="modalTitle">Edit Record</h2><button class="secondary" onclick="closeModal()">Close</button></div><div id="modalBody"></div><div class="actions"><button class="primary" onclick="saveModal()">Save Changes</button><button class="secondary" onclick="closeModal()">Cancel</button></div></div></div>
 <script>
 const DB="VibeHoldingsCaseDB",STORE="cases";let db,cases=[],selected=null,tab="overview",editing=null;
 const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -105,7 +266,7 @@ function closeModal(){document.getElementById("modal").classList.remove("show");
 async function deleteRecord(type,i){if(confirm("Delete this record?")){let c=cur();c[type].splice(i,1);await put(c);await load();draw()}}
 async function deleteCase(){if(confirm("Delete this case and all its records?")){await delDB(selected);selected=null;await load();draw()}}
 
-function draw(){drawCases();let c=cur();if(!c)return;document.getElementById("app").innerHTML=`<div class="row"><div><h1>${esc(c.number)}</h1><div class="muted">${esc(c.title||"Untitled case")}</div></div><div class="actions"><button class="secondary" onclick="window.print()">Print / PDF</button><button class="danger" onclick="deleteCase()">Delete Case</button></div></div><div class="tabs">${["overview","suspects","people","statements","notes","evidence","timeline"].map(t=>`<button class="tab ${tab===t?"active":""}" onclick="setTab('${t}')">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}</div>${({overview,suspects,people,statements,notes,evidence,timeline}[tab])(c)}`}
+function draw(){drawCases();let c=cur();if(!c)return;document.getElementById("app").innerHTML=`<div class="row"><div><h1>${esc(c.number)}</h1><div class="muted">${esc(c.title||"Untitled case")}</div></div><div class="actions"><button class="secondary" onclick="window.print()">Print / PDF</button><button class="primary" onclick="printThermalSummary()">🖨️ 80mm Case Summary</button><button class="danger" onclick="deleteCase()">Delete Case</button></div></div><div class="tabs">${["overview","suspects","people","statements","notes","evidence","timeline"].map(t=>`<button class="tab ${tab===t?"active":""}" onclick="setTab('${t}')">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}</div>${({overview,suspects,people,statements,notes,evidence,timeline}[tab])(c)}`}
 (async()=>{try{await load();draw()}catch(e){document.getElementById("app").innerHTML="<div class='card'><h2>Database error</h2><p>"+esc(e.message)+"</p></div>"}})();
 </script>
 </body>
