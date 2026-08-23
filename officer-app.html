@@ -204,26 +204,30 @@ async function savePerson(){
 
 
 async function printPersonLookup(personId){
-  const person=(window.people||[]).find(x=>x.id===personId);
-  if(!person){ alert("Person not found."); return; }
+  try{
+    const person=(window.people||[]).find(x=>x.id===personId);
+    if(!person){ alert("Person not found."); return; }
 
-  const {data,error}=await sb.from("ticket_print_queue").insert({
-    ticket_id:null,
-    person_id:person.id,
-    job_type:"person_lookup",
-    status:"Queued"
-  }).select().single();
-
-  if(error){
-    // Backwards-compatible fallback for older queue schemas.
-    const {error:e2}=await sb.from("ticket_print_queue").insert({
+    // The printer bridge reads person_id + job_type from the same queue
+    // used by ticket printing. Lookup jobs do not have a ticket_id.
+    const {error}=await sb.from("ticket_print_queue").insert({
+      ticket_id:null,
       person_id:person.id,
       job_type:"person_lookup",
       status:"Queued"
     });
-    if(e2){ alert(e2.message); return; }
+
+    if(error){
+      console.error("Lookup print queue error:",error);
+      alert("Could not send lookup to printer: "+error.message);
+      return;
+    }
+
+    alert("Lookup sent to printer.");
+  }catch(e){
+    console.error(e);
+    alert("Could not send lookup to printer: "+(e.message||e));
   }
-  alert("Lookup sent to printer.");
 }
 
 function issueTicket(personId){
