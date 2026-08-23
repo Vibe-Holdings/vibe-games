@@ -113,7 +113,7 @@ async function viewPerson(id){
  <p><b>Email:</b> ${esc(p.email||"—")}</p>
  <hr><h3>Tickets (${tr.length})</h3>
  ${tr.map(t=>`<p><b>${esc(t.ticket_number)}</b> — ${esc(t.registration_plate||"No plate")} — ${esc(t.offence)} — £${Number(t.amount).toFixed(2)} — ${esc(t.status)}</p>`).join("")||"<p>No tickets.</p>"}
- <div class="actions"><button class="primary" onclick="issueTicket('${id}')">Issue Ticket</button><button class="secondary" onclick="printPerson('${id}')">Print Lookup</button></div>`);
+ <div class="actions"><button class="primary" onclick="issueTicket('${id}')">Issue Ticket</button> <button onclick="printPersonLookup('${id}')">Print Lookup</button> <button onclick="printPersonLookup('${id}')">Print Lookup</button><button class="secondary" onclick="printPerson('${id}')">Print Lookup</button></div>`);
 }
 function ticketList(){
  const mine=currentOfficer?tickets.filter(t=>t.officer_id===currentOfficer.id):tickets;
@@ -164,6 +164,30 @@ async function savePerson(){
  }).select().single();
  if(r.error){alert(r.error.message);return}
  closeModal(); await load(); lookup(); alert("Person added.");
+}
+
+
+async function printPersonLookup(personId){
+  const person=(window.people||[]).find(x=>x.id===personId);
+  if(!person){ alert("Person not found."); return; }
+
+  const {data,error}=await sb.from("ticket_print_queue").insert({
+    ticket_id:null,
+    person_id:person.id,
+    job_type:"person_lookup",
+    status:"Queued"
+  }).select().single();
+
+  if(error){
+    // Backwards-compatible fallback for older queue schemas.
+    const {error:e2}=await sb.from("ticket_print_queue").insert({
+      person_id:person.id,
+      job_type:"person_lookup",
+      status:"Queued"
+    });
+    if(e2){ alert(e2.message); return; }
+  }
+  alert("Lookup sent to printer.");
 }
 
 function issueTicket(personId){
