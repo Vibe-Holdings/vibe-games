@@ -66,8 +66,146 @@ function officerSelect(id){return `<div><label>Officer</label><select id="${id}"
 function render(){if(page==='dashboard')app.innerHTML=dashboard();if(page==='cases')app.innerHTML=cases();if(page==='incidents')app.innerHTML=incidents();if(page==='people')app.innerHTML=people();if(page==='officers')app.innerHTML=officers();if(page==='evidence')app.innerHTML=evidence();if(page==='statements')app.innerHTML=statements();if(page==='tasks')app.innerHTML=tasks();if(page==='reports')app.innerHTML=reports();if(page==='search')app.innerHTML=search()}
 function dashboard(){let open=D.cases.filter(x=>x.status!=='Closed').length;return `<h1>Command Dashboard</h1><p class="muted">Investigation and records overview</p><div class="statgrid" style="margin:18px 0"><div class="stat">Cases<b>${D.cases.length}</b></div><div class="stat">Open<b>${open}</b></div><div class="stat">People<b>${D.persons.length}</b></div><div class="stat">Evidence<b>${D.evidence.length}</b></div></div><div class="card"><h2>Recent Cases</h2>${D.cases.slice(0,8).map(c=>`<p><b>${esc(c.case_number)}</b> — ${esc(c.title)} <span class="badge">${esc(c.status)}</span></p>`).join('')||'<div class="empty">No cases.</div>'}</div>`}
 function table(title,head,body,addBtn){return `<div class="row"><div><h1>${title}</h1><p class="muted">Records management</p></div>${addBtn||''}</div><div class="card"><div style="overflow:auto"><table><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr>${body||`<tr><td colspan="${head.length}" class="empty">No records.</td></tr>`}</table></div></div>`}
-function cases(){return table('Cases',['Case','Title','Status','Priority','Category','Actions'],D.cases.map(c=>`<tr><td>${esc(c.case_number)}</td><td>${esc(c.title)}</td><td>${esc(c.status)}</td><td>${esc(c.priority)}</td><td>${esc(c.category)}</td><td><button class="secondary" onclick="caseView('${c.id}')">Open</button><button class="danger" onclick="remove('cases','${c.id}')">Delete</button></td></tr>`).join(''),`<button class="primary" onclick="newCase()">+ New Case</button>`)}
-function incidents(){return table('Incidents',['Number','Title','Type','Status','Priority','Location','Actions'],D.incidents.map(x=>`<tr><td>${esc(x.incident_number)}</td><td>${esc(x.title)}</td><td>${esc(x.incident_type)}</td><td>${esc(x.status)}</td><td>${esc(x.priority)}</td><td>${esc(x.location)}</td><td><button class="danger" onclick="remove('incidents','${x.id}')">Delete</button></td></tr>`).join(''),`<button class="primary" onclick="newIncident()">+ Log Incident</button>`)}
+function cases(){
+  const q=(window.caseSearchValue||"").toLowerCase();
+  const status=window.caseStatusFilter||"All";
+  const priority=window.casePriorityFilter||"All";
+  const list=D.cases.filter(c=>{
+    const text=`${c.case_number||""} ${c.title||""} ${c.category||""} ${c.summary||""}`.toLowerCase();
+    return (!q||text.includes(q)) && (status==="All"||c.status===status) && (priority==="All"||c.priority===priority);
+  });
+  const open=D.cases.filter(c=>c.status!=="Closed").length;
+  const critical=D.cases.filter(c=>c.priority==="Critical"&&c.status!=="Closed").length;
+  return `
+    <div class="row">
+      <div><h1>Cases</h1><p class="muted">Case management and investigation records</p></div>
+      <div class="actions"><button class="primary" onclick="newCase()">+ New Case</button></div>
+    </div>
+
+    <div class="statgrid" style="margin:16px 0">
+      <div class="stat">Total Cases<b>${D.cases.length}</b></div>
+      <div class="stat">Open<b>${open}</b></div>
+      <div class="stat">Critical<b>${critical}</b></div>
+      <div class="stat">Closed<b>${D.cases.filter(c=>c.status==="Closed").length}</b></div>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div class="full"><label>Search cases</label>
+          <input id="caseSearch" placeholder="Case number, title, category or summary" value="${esc(window.caseSearchValue||"")}"
+            oninput="window.caseSearchValue=this.value;render()">
+        </div>
+        ${sel('Status','caseStatusFilter',['All','Open','Under Investigation','Closed','Suspended'],status).replace('<select id="caseStatusFilter"','<select id="caseStatusFilter" onchange="window.caseStatusFilter=this.value;render()"')}
+        ${sel('Priority','casePriorityFilter',['All','Low','Medium','High','Critical'],priority).replace('<select id="casePriorityFilter"','<select id="casePriorityFilter" onchange="window.casePriorityFilter=this.value;render()"')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="overflow:auto">
+        <table>
+          <tr><th>Case</th><th>Title</th><th>Status</th><th>Priority</th><th>Category</th><th>Lead Officer</th><th>Actions</th></tr>
+          ${list.map(c=>{
+            const o=D.officers.find(x=>x.id===c.lead_officer_id);
+            return `<tr>
+              <td><b>${esc(c.case_number)}</b><br><span class="muted">${esc(c.created_at||"")}</span></td>
+              <td>${esc(c.title||"—")}</td>
+              <td><span class="badge">${esc(c.status||"—")}</span></td>
+              <td>${esc(c.priority||"—")}</td>
+              <td>${esc(c.category||"—")}</td>
+              <td>${esc(o?((o.first_name||"")+" "+(o.last_name||"")):"Unassigned")}</td>
+              <td class="actions">
+                <button class="secondary" onclick="caseView('${c.id}')">Open</button>
+                <button class="secondary" onclick="editCase('${c.id}')">Edit</button>
+                <button class="danger" onclick="remove('cases','${c.id}')">Delete</button>
+              </td>
+            </tr>`;
+          }).join("") || `<tr><td colspan="7" class="empty">No cases match your filters.</td></tr>`}
+        </table>
+      </div>
+    </div>`;
+}
+
+async function archiveCase(id){
+  const c=D.cases.find(x=>x.id===id);
+  if(!c)return;
+  if(c.status==="Closed"){
+    alert("This case is already closed.");
+    return;
+  }
+  if(!confirm("Close and archive this case? It will remain in the database and can be viewed in the archive."))return;
+  try{
+    const r=await sb.from("cases").update({
+      status:"Closed",
+      archived:true,
+      archived_at:new Date().toISOString()
+    }).eq("id",id);
+    if(r.error)throw r.error;
+    await loadAll();
+    closeModal();
+    render();
+  }catch(e){
+    alert("Could not archive case: "+e.message);
+  }
+}
+
+function archivedCases(){
+  const list=D.cases.filter(c=>c.status==="Closed" || c.archived===true);
+  return `
+    <div class="row"><div><h1>Case Archive</h1><p class="muted">Closed cases are retained and cannot be deleted.</p></div></div>
+    <div class="card"><div style="overflow:auto"><table>
+      <tr><th>Case</th><th>Title</th><th>Closed</th><th>Priority</th><th>Actions</th></tr>
+      ${list.map(c=>`<tr>
+        <td><b>${esc(c.case_number||"—")}</b></td>
+        <td>${esc(c.title||"—")}</td>
+        <td>${esc(c.archived_at||"—")}</td>
+        <td>${esc(c.priority||"—")}</td>
+        <td><button class="secondary" onclick="caseView('${c.id}')">View</button></td>
+      </tr>`).join("") || '<tr><td colspan="5" class="empty">No archived cases.</td></tr>'}
+    </table></div></div>`;
+}
+
+async function uploadCasePhoto(caseId){
+  const input=document.getElementById("casePhotoInput");
+  if(!input || !input.files.length)return;
+  const file=input.files[0];
+  const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const path=`cases/${caseId}/${Date.now()}-${safe}`;
+
+  try{
+    const upload=await sb.storage.from("case-photos").upload(path,file,{upsert:false});
+    if(upload.error)throw upload.error;
+
+    const record=await sb.from("case_photos").insert({
+      case_id:caseId,
+      storage_path:path,
+      file_name:file.name,
+      mime_type:file.type,
+      size_bytes:file.size
+    });
+    if(record.error)throw record.error;
+
+    showPhotoMessage("Photo uploaded successfully.");
+    input.value="";
+  }catch(e){
+    showPhotoMessage("Photo upload failed: "+e.message,true);
+  }
+}
+
+function showPhotoMessage(message,error=false){
+  let el=document.getElementById("case-photo-message");
+  if(!el){
+    el=document.createElement("div");
+    el.id="case-photo-message";
+    el.style.cssText="margin-top:10px;padding:10px;border-radius:9px;font-weight:600;";
+    const target=document.getElementById("casePhotoInput");
+    if(target)target.parentNode.appendChild(el);
+  }
+  el.textContent=message;
+  el.style.background=error?"#fee2e2":"#dcfce7";
+  el.style.color=error?"#991b1b":"#166534";
+}
+
+function incidents()function incidents(){return table('Incidents',['Number','Title','Type','Status','Priority','Location','Actions'],D.incidents.map(x=>`<tr><td>${esc(x.incident_number)}</td><td>${esc(x.title)}</td><td>${esc(x.incident_type)}</td><td>${esc(x.status)}</td><td>${esc(x.priority)}</td><td>${esc(x.location)}</td><td><button class="danger" onclick="remove('incidents','${x.id}')">Delete</button></td></tr>`).join(''),`<button class="primary" onclick="newIncident()">+ Log Incident</button>`)}
 function people(){return table('People',['Reference','Name','DOB','Phone','Email','Actions'],D.persons.map(x=>`<tr><td>${esc(x.reference)}</td><td>${esc(x.first_name+' '+x.last_name)}</td><td>${esc(x.date_of_birth||'')}</td><td>${esc(x.phone)}</td><td>${esc(x.email)}</td><td><button class="danger" onclick="remove('persons','${x.id}')">Delete</button></td></tr>`).join(''),`<button class="primary" onclick="newPerson()">+ Add Person</button>`)}
 function officers(){return table('Officers',['Collar','Name','Rank','Department','Status','Actions'],D.officers.map(x=>`<tr><td>${esc(x.collar_number)}</td><td>${esc(x.first_name+' '+x.last_name)}</td><td>${esc(x.rank)}</td><td>${esc(x.department)}</td><td>${esc(x.status)}</td><td><button class="danger" onclick="remove('officers','${x.id}')">Delete</button></td></tr>`).join(''),`<button class="primary" onclick="newOfficer()">+ Add Officer</button>`)}
 function evidence(){return table('Evidence',['Number','Description','Type','Case','Storage','Status','Actions'],D.evidence.map(x=>`<tr><td>${esc(x.evidence_number)}</td><td>${esc(x.description)}</td><td>${esc(x.evidence_type)}</td><td>${esc(D.cases.find(c=>c.id===x.case_id)?.case_number||'')}</td><td>${esc(x.storage_location)}</td><td>${esc(x.status)}</td><td><button class="danger" onclick="remove('evidence','${x.id}')">Delete</button></td></tr>`).join(''),`<button class="primary" onclick="newEvidence()">+ Register Evidence</button>`)}
@@ -84,8 +222,131 @@ function newStatement(){openModal('Add Statement',`<div class="grid">${form('Sta
 function newTask(){openModal('New Task',`<div class="grid">${form('Title','tt')}${caseSelect('tc')}${officerSelect('to')}${sel('Priority','tp',['Low','Medium','High','Critical'],'Medium')}${sel('Status','ts',['Open','In Progress','Complete','Cancelled'],'Open')}${form('Due At','td')}${form('Description','tx','',true)}</div><div class="actions"><button class="primary" onclick="saveTask()">Create Task</button></div>`)}async function saveTask(){await add('tasks',{title:v('tt'),case_id:v('tc')||null,assigned_to:v('to')||null,priority:v('tp'),status:v('ts'),due_at:v('td')||null,description:v('tx')});closeModal();await loadAll()}
 function newReport(){openModal('New Report',`<div class="grid">${form('Report Number','rn','REP-'+Math.floor(Math.random()*900000+100000))}${form('Title','rt')}${form('Type','ry','General')}${caseSelect('rc')}${officerSelect('ro')}${sel('Status','rs',['Draft','Submitted','Reviewed','Final'],'Draft')}${form('Report Body','rb','',true)}</div><div class="actions"><button class="primary" onclick="saveReport()">Save Report</button></div>`)}async function saveReport(){await add('reports',{report_number:v('rn'),title:v('rt'),report_type:v('ry'),case_id:v('rc')||null,author_id:v('ro')||null,status:v('rs'),body:v('rb')});closeModal();await loadAll()}
 async function remove(t,id){if(confirm('Delete this record?')){try{await del(t,id);await loadAll()}catch(e){alert(e.message)}}}
-function caseView(id){let c=D.cases.find(x=>x.id===id);let ev=D.events.filter(x=>x.case_id===id);openModal('Case '+c.case_number,`<h2>${esc(c.title)}</h2><p><b>Status:</b> ${esc(c.status)} &nbsp; <b>Priority:</b> ${esc(c.priority)}</p><h3>Summary</h3><p>${esc(c.summary)}</p><h3>Timeline</h3>${ev.map(e=>`<p><b>${esc(e.title)}</b><br>${esc(e.event_at)}<br>${esc(e.details)}</p>`).join('')||'<p>No events.</p>'}<div class="actions"><button class="primary" onclick="printCase('${id}')">Print 80mm Summary</button></div>`)}
-function printCase(id){let c=D.cases.find(x=>x.id===id);let w=window.open('','_blank','width=420,height=800');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><head><title>${esc(c.case_number)}</title><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}p{white-space:pre-wrap}</style></head><body><h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1><b>${esc(c.case_number)}</b><p>${esc(c.title)}</p><h2>SUMMARY</h2><p>${esc(c.summary)}</p><h2>STATUS</h2><p>${esc(c.status)} / ${esc(c.priority)}</p><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close()}
+function caseView(id){
+  const c=D.cases.find(x=>x.id===id);
+  if(!c)return;
+  const ev=D.events.filter(x=>x.case_id===id).sort((a,b)=>String(a.event_at||"").localeCompare(String(b.event_at||"")));
+  const inc=D.incidents.filter(x=>x.case_id===id);
+  const evid=D.evidence.filter(x=>x.case_id===id);
+  const sts=D.statements.filter(x=>x.case_id===id);
+  const tasksList=D.tasks.filter(x=>x.case_id===id);
+  const officer=D.officers.find(x=>x.id===c.lead_officer_id);
+
+  openModal("Case "+(c.case_number||""),`
+    <div class="statgrid">
+      <div class="stat">Status<b style="font-size:16px">${esc(c.status||"—")}</b></div>
+      <div class="stat">Priority<b style="font-size:16px">${esc(c.priority||"—")}</b></div>
+      <div class="stat">Incidents<b>${inc.length}</b></div>
+      <div class="stat">Evidence<b>${evid.length}</b></div>
+    </div>
+
+    <div class="card">
+      <h2>${esc(c.title||"Untitled case")}</h2>
+      <p><b>Case number:</b> ${esc(c.case_number||"—")}</p>
+      <p><b>Category:</b> ${esc(c.category||"—")}</p>
+      <p><b>Lead officer:</b> ${esc(officer?((officer.first_name||"")+" "+(officer.last_name||"")):"Unassigned")}</p>
+      <h3>Case Summary</h3>
+      <p>${esc(c.summary||"No summary recorded.")}</p>
+    </div>
+
+    <div class="card">
+      <div class="row"><h3>Case Timeline</h3><button class="primary" onclick="addCaseEvent('${c.id}')">+ Add Event</button></div>
+      ${ev.map(e=>`<div style="padding:10px 0;border-bottom:1px solid #e5e7eb">
+        <b>${esc(e.title||"Event")}</b> <span class="muted">${esc(e.event_at||"")}</span>
+        <div>${esc(e.details||"")}</div>
+      </div>`).join("")||'<p class="muted">No timeline events recorded.</p>'}
+    </div>
+
+    <div class="grid">
+      <div class="card"><h3>Linked Incidents (${inc.length})</h3>${inc.map(x=>`<p><b>${esc(x.incident_number)}</b> — ${esc(x.title)}</p>`).join("")||'<p class="muted">None linked.</p>'}</div>
+      <div class="card"><h3>Evidence (${evid.length})</h3>${evid.map(x=>`<p><b>${esc(x.evidence_number)}</b> — ${esc(x.description)}</p>`).join("")||'<p class="muted">None linked.</p>'}</div>
+      <div class="card"><h3>Statements (${sts.length})</h3>${sts.map(x=>`<p><b>${esc(x.statement_number)}</b> — ${esc(x.status)}</p>`).join("")||'<p class="muted">None linked.</p>'}</div>
+      <div class="card"><h3>Tasks (${tasksList.length})</h3>${tasksList.map(x=>`<p><b>${esc(x.title)}</b> — ${esc(x.status)}</p>`).join("")||'<p class="muted">None linked.</p>'}</div>
+    </div>
+
+    <div class="card">
+      <h3>Case Photos</h3>
+      <p class="muted">Use the police phone camera to capture and upload evidence/photos to this case.</p>
+      <input id="casePhotoInput" type="file" accept="image/*" capture="environment" onchange="uploadCasePhoto('''${c.id}''')">
+      <div id="case-photo-message"></div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" onclick="editCase('${c.id}')">Edit Case</button>
+      <button class="secondary" onclick="printCase('${c.id}')">Print 80mm Summary</button>
+      
+    </div>`);
+}
+
+function editCase(id){
+  const c=D.cases.find(x=>x.id===id); if(!c)return;
+  openModal("Edit Case",`
+    <div class="grid">
+      ${form('Case Number','ecn',c.case_number)}
+      ${form('Title','ect',c.title)}
+      ${sel('Status','ecs',['Open','Under Investigation','Closed','Suspended'],c.status||'Open')}
+      ${sel('Priority','ecp',['Low','Medium','High','Critical'],c.priority||'Medium')}
+      ${form('Category','ecc',c.category)}
+      ${officerSelect('eco')}
+      ${form('Summary','ecx',c.summary||'',true)}
+    </div>
+    <div class="actions"><button class="primary" onclick="saveEditedCase('${id}')">Save Changes</button></div>`);
+  const select=document.getElementById('eco');
+  if(select)select.value=c.lead_officer_id||"";
+}
+
+async function saveEditedCase(id){
+  try{
+    const r=await sb.from('cases').update({
+      case_number:v('ecn'),title:v('ect'),status:v('ecs'),priority:v('ecp'),
+      category:v('ecc'),lead_officer_id:v('eco')||null,summary:v('ecx')
+    }).eq('id',id);
+    if(r.error)throw r.error;
+    closeModal();await loadAll();
+  }catch(e){alert(e.message)}
+}
+
+function addCaseEvent(caseId){
+  openModal("Add Case Timeline Event",`
+    <div class="grid">
+      ${form('Event Title','cet')}
+      ${form('Event Date / Time','ced',new Date().toISOString().slice(0,16))}
+      ${form('Details','cex','',true)}
+    </div>
+    <div class="actions"><button class="primary" onclick="saveCaseEvent('${caseId}')">Add Event</button></div>`);
+}
+
+async function saveCaseEvent(caseId){
+  try{
+    const r=await sb.from('events').insert({
+      case_id:caseId,title:v('cet'),event_at:v('ced'),details:v('cex')
+    });
+    if(r.error)throw r.error;
+    closeModal();await loadAll();caseView(caseId);
+  }catch(e){alert(e.message)}
+}
+
+function printCase(id){let c=D.cases.find(x=>x.id===id);let w=window.open('','_blank','width=420,height=800');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><head><title>${esc(c.case_number)}</title><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}p{white-space:pre-wrap}</style></head><body><h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1><b>${esc(c.case_number)}</b><p>${esc(c.title)}</p><h2>SUMMARY</h2><p>${esc(c.summary)}</p><h2>STATUS</h2><p>${esc(c.status)} / ${esc(c.priority)}</p><script>onload=()=>setTimeout(()=>print(),300)<\/script>
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+  const b=document.createElement("button");
+  b.id="caseArchiveButton";
+  b.type="button";
+  b.textContent="Case Archive";
+  b.className="secondary";
+  b.onclick=function(){
+    if(typeof openTab==="function") openTab("cases-archive");
+    else if(typeof showTab==="function") showTab("cases-archive");
+    else if(typeof render==="function"){
+      const app=document.getElementById("app");
+      if(app) app.innerHTML=archivedCases();
+    }
+  };
+  const nav=document.querySelector("nav");
+  if(nav) nav.appendChild(b);
+});
+</script>
+</body></html>`);w.document.close()}
 function printReport(id){let r=D.reports.find(x=>x.id===id);let w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><body style="font:14px Arial;padding:30px"><h1>${esc(r.title)}</h1><p>${esc(r.report_number)} • ${esc(r.report_type)}</p><pre style="white-space:pre-wrap;font:inherit">${esc(r.body)}</pre><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close()}
 loadAll();
 </script></body></html>
