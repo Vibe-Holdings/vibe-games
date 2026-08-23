@@ -47,7 +47,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;bor
 <script>
 /* This file is deliberately self-contained. No old print/template code is used. */
 const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
-const SUPABASE_KEY="";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
 let sb=null;
 let cases=[],people=[],officers=[],incidents=[],evidence=[],statements=[],tasks=[],reports=[];
 let currentTab="cases";
@@ -68,7 +68,7 @@ async function load(){
  if(!window.supabase){$("app").innerHTML='<div class="card"><h2>Supabase library failed to load</h2></div>';return}
  /* Supabase client is only created when a key is supplied. */
  if(!SUPABASE_KEY){
-   $("app").innerHTML='<div class="card"><h2>Clean build is installed</h2><p>This screen confirms the new file is being served. Add your Supabase anon key to the SUPABASE_KEY constant in this file to load records.</p></div>';
+   $("app").innerHTML='<div class="card"><h2>Clean build is installed</h2><p>Supabase is configured. Loading records…</p></div>';
    return;
  }
  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
