@@ -1,3 +1,14 @@
+function showPeopleError(message){
+  let el=document.getElementById("people-load-error");
+  if(!el){
+    el=document.createElement("div");
+    el.id="people-load-error";
+    el.style.cssText="margin:12px 0;padding:12px;border-radius:10px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-weight:600;";
+    const target=document.querySelector("main")||document.body;
+    target.prepend(el);
+  }
+  el.textContent=message;
+}
 <!doctype html>
 <html lang="en">
 <head><script>(function(){try{if(!sessionStorage.getItem("police_session"))window.location.replace("/");}catch(e){window.location.replace("/");}})();</script>
@@ -105,16 +116,32 @@ const officerName=id=>{let o=officers.find(x=>x.id===id);return o?o.first_name+"
 const personName=id=>{let p=people.find(x=>x.id===id);return p?p.first_name+" "+p.last_name:"—"};
 
 async function load(){
-  const [p,o,t,c]=await Promise.all([
-    sb.from("persons").select("*").order("last_name"),
-    sb.from("officers").select("*").order("last_name"),
-    sb.from("tickets").select("*").order("issued_at",{ascending:false}),
-    sb.from("cases").select("*").order("created_at",{ascending:false})
-  ]);
-  for(const r of [p,o,t,c])if(r.error)throw r.error;
-  people=p.data||[];officers=o.data||[];tickets=t.data||[];cases=c.data||[];
-  if(!currentOfficer&&officers.length) currentOfficer=officers[0];
-  document.getElementById("officerLabel").textContent=currentOfficer?currentOfficer.collar_number+" — "+currentOfficer.first_name+" "+currentOfficer.last_name:"No officer selected";
+  const peopleResult = await sb.from("persons").select("*").order("last_name",{ascending:true});
+  if(peopleResult.error){
+    console.error("People load error:",peopleResult.error);
+    window.people=[];
+    showPeopleError("People database error: "+peopleResult.error.message);
+  }else{
+    window.people=peopleResult.data||[];
+    renderPeople(window.people);
+  }
+
+  // Load the other areas independently so one failing table
+  // cannot prevent People from loading.
+  try{
+    const r=await sb.from("officers").select("*");
+    window.officers=r.error?[]:(r.data||[]);
+  }catch(e){console.error("Officers load error:",e);window.officers=[];}
+
+  try{
+    const r=await sb.from("tickets").select("*").order("issued_at",{ascending:false});
+    window.tickets=r.error?[]:(r.data||[]);
+  }catch(e){console.error("Tickets load error:",e);window.tickets=[];}
+
+  try{
+    const r=await sb.from("cases").select("*").order("created_at",{ascending:false});
+    window.cases=r.error?[]:(r.data||[]);
+  }catch(e){console.error("Cases load error:",e);}
 }
 
 function show(page){
@@ -277,7 +304,19 @@ async function saveTicket(personId){
 function printPerson(id){
  const p=people.find(x=>x.id===id);const tr=tickets.filter(x=>x.person_id===id);
  const w=window.open("","_blank","width=500,height=800");if(!w){alert("Allow pop-ups.");return}
- w.document.write(`<html><head><title>Person Lookup</title><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}</style></head><body><h1>OFFICER LOOKUP</h1><p><b>${esc(p.first_name+" "+p.last_name)}</b><br>Ref: ${esc(p.reference)}<br>DOB: ${esc(p.date_of_birth||"—")}<br>Address: ${esc(p.address||"—")}<br>Phone: ${esc(p.phone||"—")}</p><h2>Tickets</h2>${tr.map(t=>`<p>${esc(t.ticket_number)}<br>${esc(t.offence)}<br>£${Number(t.amount).toFixed(2)}<br>${esc(t.status)}</p>`).join("")||"<p>None</p>"}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close();
+ w.document.write(`<html><head><title>Person Lookup</title><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}</style></head><body><h1>OFFICER LOOKUP</h1><p><b>${esc(p.first_name+" "+p.last_name)}</b><br>Ref: ${esc(p.reference)}<br>DOB: ${esc(p.date_of_birth||"—")}<br>Address: ${esc(p.address||"—")}<br>Phone: ${esc(p.phone||"—")}</p><h2>Tickets</h2>${tr.map(t=>`<p>${esc(t.ticket_number)}<br>${esc(t.offence)}<br>£${Number(t.amount).toFixed(2)}<br>${esc(t.status)}</p>`).join("")||"<p>None</p>"}<script>onload=()=>setTimeout(()=>print(),300)<\/script>
+<script>
+(function(){
+  const btn=document.createElement("button");
+  btn.id="refresh-people";
+  btn.type="button";
+  btn.textContent="↻ Refresh People";
+  btn.style.cssText="position:fixed;right:18px;top:78px;z-index:9999;";
+  btn.addEventListener("click",()=>window.load&&window.load());
+  document.body.appendChild(btn);
+})();
+</script>
+</body></html>`);w.document.close();
 }
 function openModal(title,body){document.getElementById("mt").textContent=title;document.getElementById("mb").innerHTML=body;document.getElementById("modal").classList.add("show")}
 function closeModal(){document.getElementById("modal").classList.remove("show")}
@@ -285,3 +324,16 @@ function closeModal(){document.getElementById("modal").classList.remove("show")}
 </script>
 </body>
 </html>
+
+function renderPeople(list){
+  const target=document.getElementById("people-list")||document.getElementById("people")||document.querySelector("[data-people-list]");
+  if(!target)return;
+  target.innerHTML="";
+  (list||[]).forEach(person=>{
+    const row=document.createElement("div");
+    row.className="person-row";
+    row.innerHTML=`<strong>${[person.first_name,person.middle_name,person.last_name].filter(Boolean).join(" ")||"Unnamed"}</strong>
+      <span>${person.reference||""}</span>`;
+    target.appendChild(row);
+  });
+}
