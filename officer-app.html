@@ -69,7 +69,7 @@ function show(page){
 function lookup(){
  document.getElementById("app").innerHTML=`
  <div class="card"><h1>People Lookup</h1><p class="muted">Search the people register by name, reference, phone or email.</p>
- <input id="q" placeholder="Search person..." oninput="runLookup()"></div>
+ <input id="q" placeholder="Search person..." oninput="runLookup()"><div class="actions"><button class="primary" onclick="addPerson()">+ Add Person</button></div></div>
  <div id="results"></div>`;
  runLookup();
 }
@@ -92,15 +92,15 @@ async function viewPerson(id){
  <p><b>Phone:</b> ${esc(p.phone||"—")}</p>
  <p><b>Email:</b> ${esc(p.email||"—")}</p>
  <hr><h3>Tickets (${tr.length})</h3>
- ${tr.map(t=>`<p><b>${esc(t.ticket_number)}</b> — ${esc(t.offence)} — £${Number(t.amount).toFixed(2)} — ${esc(t.status)}</p>`).join("")||"<p>No tickets.</p>"}
+ ${tr.map(t=>`<p><b>${esc(t.ticket_number)}</b> — ${esc(t.registration_plate||"No plate")} — ${esc(t.offence)} — £${Number(t.amount).toFixed(2)} — ${esc(t.status)}</p>`).join("")||"<p>No tickets.</p>"}
  <div class="actions"><button class="primary" onclick="issueTicket('${id}')">Issue Ticket</button><button class="secondary" onclick="printPerson('${id}')">Print Lookup</button></div>`);
 }
 function ticketList(){
  const mine=currentOfficer?tickets.filter(t=>t.officer_id===currentOfficer.id):tickets;
  document.getElementById("app").innerHTML=`
  <div class="card"><h1>Tickets</h1><p class="muted">Tickets issued by the selected officer.</p>
- <div style="overflow:auto"><table><tr><th>Number</th><th>Person</th><th>Offence</th><th>Amount</th><th>Issued</th><th>Status</th></tr>
- ${mine.map(t=>`<tr><td>${esc(t.ticket_number)}</td><td>${esc(personName(t.person_id))}</td><td>${esc(t.offence)}</td><td>£${Number(t.amount).toFixed(2)}</td><td>${esc(t.issued_at)}</td><td>${esc(t.status)}</td></tr>`).join("")||"<tr><td colspan=6>No tickets.</td></tr>"}</table></div></div>`;
+ <div style="overflow:auto"><table><tr><th>Number</th><th>Person</th><th>Reg Plate</th><th>Offence</th><th>Amount</th><th>Issued</th><th>Status</th></tr>
+ ${mine.map(t=>`<tr><td>${esc(t.ticket_number)}</td><td>${esc(personName(t.person_id))}</td><td>${esc(t.registration_plate||"—")}</td><td>${esc(t.offence)}</td><td>£${Number(t.amount).toFixed(2)}</td><td>${esc(t.issued_at)}</td><td>${esc(t.status)}</td></tr>`).join("")||"<tr><td colspan=7>No tickets.</td></tr>"}</table></div></div>`;
 }
 function dashboard(){
  document.getElementById("app").innerHTML=`
@@ -112,6 +112,40 @@ function dashboard(){
  <div class="card"><h2>Select Officer</h2><select id="officerSelect" onchange="selectOfficer(this.value)">${officers.map(o=>`<option value="${o.id}" ${currentOfficer&&o.id===currentOfficer.id?"selected":""}>${esc(o.collar_number+" — "+o.first_name+" "+o.last_name)}</option>`).join("")}</select></div>`;
 }
 function selectOfficer(id){currentOfficer=officers.find(o=>o.id===id);document.getElementById("officerLabel").textContent=currentOfficer.collar_number+" — "+currentOfficer.first_name+" "+currentOfficer.last_name;dashboard()}
+
+function addPerson(){
+ openModal("Add Person",`
+ <div class="grid">
+ <div><label>Reference</label><input id="p_ref" value="PER-${Math.floor(100000+Math.random()*900000)}"></div>
+ <div><label>First Name</label><input id="p_first"></div>
+ <div><label>Middle Name</label><input id="p_middle"></div>
+ <div><label>Last Name</label><input id="p_last"></div>
+ <div><label>Date of Birth</label><input id="p_dob" type="date"></div>
+ <div><label>Gender</label><input id="p_gender"></div>
+ <div class="full"><label>Address</label><input id="p_address"></div>
+ <div><label>Phone</label><input id="p_phone"></div>
+ <div><label>Email</label><input id="p_email"></div>
+ <div class="full"><label>Notes</label><textarea id="p_notes"></textarea></div>
+ </div>
+ <div class="actions"><button class="primary" onclick="savePerson()">Save Person</button></div>`);
+}
+async function savePerson(){
+ const r=await sb.from("persons").insert({
+  reference:val("p_ref"),
+  first_name:val("p_first"),
+  middle_name:val("p_middle"),
+  last_name:val("p_last"),
+  date_of_birth:val("p_dob")||null,
+  gender:val("p_gender"),
+  address:val("p_address"),
+  phone:val("p_phone"),
+  email:val("p_email"),
+  notes:val("p_notes")
+ }).select().single();
+ if(r.error){alert(r.error.message);return}
+ closeModal(); await load(); lookup(); alert("Person added.");
+}
+
 function issueTicket(personId){
  if(!currentOfficer){alert("Select an officer first.");return}
  openModal("Issue Ticket",`
@@ -119,7 +153,7 @@ function issueTicket(personId){
  <div><label>Ticket Number</label><input id="t_num" value="TKT-${Math.floor(100000+Math.random()*900000)}"></div>
  <div><label>Offence Code</label><input id="t_code" placeholder="e.g. DEMO-01"></div>
  <div class="full"><label>Offence</label><input id="t_offence"></div>
- <div><label>Location</label><input id="t_loc"></div>
+ <div><label>Registration Plate</label><input id="t_reg" placeholder="e.g. SK26 ABC" maxlength="12" style="text-transform:uppercase"></div><div><label>Location</label><input id="t_loc"></div>
  <div><label>Amount (£)</label><input id="t_amount" type="number" min="0" step="0.01"></div>
  <div><label>Due Date</label><input id="t_due" type="datetime-local"></div>
  <div class="full"><label>Notes</label><textarea id="t_notes"></textarea></div>
@@ -127,7 +161,7 @@ function issueTicket(personId){
  <div class="actions"><button class="primary" onclick="saveTicket('${personId}')">Issue Ticket</button></div>`);
 }
 async function saveTicket(personId){
- const ticket={ticket_number:val("t_num"),person_id:personId,officer_id:currentOfficer.id,offence_code:val("t_code"),offence:val("t_offence"),location:val("t_loc"),amount:Number(val("t_amount")||0),due_at:val("t_due")||null,notes:val("t_notes"),status:"Issued"};
+ const ticket={ticket_number:val("t_num"),person_id:personId,officer_id:currentOfficer.id,offence_code:val("t_code"),offence:val("t_offence"),registration_plate:val("t_reg").toUpperCase(),location:val("t_loc"),amount:Number(val("t_amount")||0),due_at:val("t_due")||null,notes:val("t_notes"),status:"Issued"};
  const r=await sb.from("tickets").insert(ticket).select().single();
  if(r.error){alert(r.error.message);return}
  await sb.from("ticket_print_queue").insert({ticket_id:r.data.id,status:"Queued"});
