@@ -148,7 +148,7 @@ function viewPerson(id){
     ${tr.length?tr.map(t=>`<p>${esc(t.ticket_number||"—")} — ${esc(t.registration_plate||"No plate")} — ${esc(t.offence||"—")} — £${Number(t.amount||0).toFixed(2)}</p>`).join(""):"<p class='muted'>No tickets.</p>"}
     <div class="actions">
       <button type="button" class="primary" id="lookupPrintBtn">🖨 Print Lookup</button>
-      <button type="button" id="issueBtn">Issue Ticket</button>
+      <button type="button" class="primary" id="issueBtn">Issue Ticket</button>
     </div>`);
   $("lookupPrintBtn").addEventListener("click",()=>printPersonLookup(p.id));
   $("issueBtn").addEventListener("click",()=>issueTicket(p.id));
@@ -178,11 +178,14 @@ function issueTicket(personId){
   $("saveTicketBtn").addEventListener("click",()=>saveTicket(personId));
 }
 async function saveTicket(personId){
-  const btn=$("saveTicketBtn");btn.disabled=true;btn.textContent="Issuing…";
+  const btn=$("saveTicketBtn");
+  btn.disabled=true;
+  btn.textContent="Issuing…";
+
   const ticketNumber="VIBE"+Date.now().toString().slice(-8);
-  const r=await sb.from("tickets").insert({
-    ticket_number:ticketNumber,person_id:personId,
-    officer_id:currentOfficer?.id||null,
+  const ticket={
+    ticket_number:ticketNumber,
+    person_id:personId,
     registration_plate:$("t_plate").value.trim(),
     offence:$("t_offence").value.trim(),
     offence_code:$("t_code").value.trim(),
@@ -191,9 +194,55 @@ async function saveTicket(personId){
     amount:Number($("t_amount").value)||0,
     status:"Issued",
     issued_at:new Date().toISOString()
-  }).select().single();
-  if(r.error){showNotice("Could not issue ticket: "+r.error.message,"error");btn.disabled=false;btn.textContent="Issue & Print";return}
-  closeModal();tickets.unshift(r.data);showNotice("✓ Ticket issued and queued for printing.");
+  };
+
+  // Only include officer_id when an officer is actually selected.
+  if(currentOfficer?.id) ticket.officer_id=currentOfficer.id;
+
+  try{
+    let r=await sb.from("tickets").insert(ticket).select().single();
+
+    if(r.error){
+      // Some installations use a different status constraint. Retry without
+      // status so the database default can supply the valid status.
+      const retry={...ticket};
+      delete retry.status;
+      r=await sb.from("tickets").insert(retry).select().single();
+    }
+
+    if(r.error){
+      console.error("Ticket insert failed:",r.error);
+      showNotice("Ticket could not be issued: "+r.error.message,"error");
+      btn.disabled=false;
+      btn.textContent="Issue & Print";
+      return;
+    }
+
+    // The database trigger normally queues printing. If the trigger isn't
+    // installed, add the print job here as a fallback.
+    const q=await sb.from("ticket_print_queue").insert({
+      ticket_id:r.data.id,
+      person_id:personId,
+      job_type:"ticket",
+      status:"Queued"
+    });
+
+    if(q.error && !/duplicate|unique/i.test(q.error.message||"")){
+      console.warn("Ticket created but print queue insert failed:",q.error);
+      showNotice("Ticket issued, but printing was not queued: "+q.error.message,"error");
+    }else{
+      showNotice("✓ Ticket issued and sent to the printer.");
+    }
+
+    closeModal();
+    tickets.unshift(r.data);
+
+  }catch(e){
+    console.error("Ticket issue exception:",e);
+    showNotice("Ticket could not be issued: "+(e.message||e),"error");
+    btn.disabled=false;
+    btn.textContent="Issue & Print";
+  }
 }
 
 function renderTickets(){
