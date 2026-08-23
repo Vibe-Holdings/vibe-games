@@ -326,8 +326,19 @@ async function saveCaseEvent(caseId){
   }catch(e){alert(e.message)}
 }
 
-function printCase(id){let c=D.cases.find(x=>x.id===id);let w=window.open('','_blank','width=420,height=800');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><head><title>${esc(c.case_number)}</title><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}p{white-space:pre-wrap}</style></head><body><h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1><b>${esc(c.case_number)}</b><p>${esc(c.title)}</p><h2>SUMMARY</h2><p>${esc(c.summary)}</p><h2>STATUS</h2><p>${esc(c.status)} / ${esc(c.priority)}</p><script>onload=()=>setTimeout(()=>print(),300)<\/script>
-<script>
+function printCase(id){
+  let c=D.cases.find(x=>x.id===id);
+  if(!c)return;
+  let w=window.open('','_blank','width=420,height=800');
+  if(!w){alert('Allow pop-ups for this site.');return}
+  const html=`<html><head><title>${esc(c.case_number)}</title>
+  <style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}p{white-space:pre-wrap}</style>
+  </head><body><h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1>
+  <b>${esc(c.case_number)}</b><p>${esc(c.title)}</p>
+  <h2>SUMMARY</h2><p>${esc(c.summary)}</p>
+  <h2>STATUS</h2><p>${esc(c.status)} / ${esc(c.priority)}</p>
+  <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+  <script>
 document.addEventListener("DOMContentLoaded",function(){
   const b=document.createElement("button");
   b.id="caseArchiveButton";
@@ -335,9 +346,7 @@ document.addEventListener("DOMContentLoaded",function(){
   b.textContent="Case Archive";
   b.className="secondary";
   b.onclick=function(){
-    if(typeof openTab==="function") openTab("cases-archive");
-    else if(typeof showTab==="function") showTab("cases-archive");
-    else if(typeof render==="function"){
+    if(typeof archivedCases==="function"){
       const app=document.getElementById("app");
       if(app) app.innerHTML=archivedCases();
     }
@@ -345,8 +354,42 @@ document.addEventListener("DOMContentLoaded",function(){
   const nav=document.querySelector("nav");
   if(nav) nav.appendChild(b);
 });
-</script>
-</body></html>`);w.document.close()}
-function printReport(id){let r=D.reports.find(x=>x.id===id);let w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><body style="font:14px Arial;padding:30px"><h1>${esc(r.title)}</h1><p>${esc(r.report_number)} • ${esc(r.report_type)}</p><pre style="white-space:pre-wrap;font:inherit">${esc(r.body)}</pre><script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close()}
+</script></body></html>`;
+  w.document.write(html);
+  w.document.close();
+}
+function printReport(id){let r=D.reports.find(x=>x.id===id);let w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><body style="font:14px Arial;padding:30px"><h1>${esc(r.title)}</h1><p>${esc(r.report_number)} • ${esc(r.report_type)}</p><pre style="white-space:pre-wrap;font:inherit">${esc(r.body)}</pre><script>onload=()=>setTimeout(()=>print(),300)<\/script><script>
+document.addEventListener("DOMContentLoaded",function(){
+  const b=document.createElement("button");
+  b.id="caseArchiveButton";
+  b.type="button";
+  b.textContent="Case Archive";
+  b.className="secondary";
+  b.onclick=function(){
+    if(typeof archivedCases==="function"){
+      const app=document.getElementById("app");
+      if(app) app.innerHTML=archivedCases();
+    }
+  };
+  const nav=document.querySelector("nav");
+  if(nav) nav.appendChild(b);
+});
+</script></body></html>`);w.document.close()}
 loadAll();
+</script><script>
+document.addEventListener("DOMContentLoaded",function(){
+  const b=document.createElement("button");
+  b.id="caseArchiveButton";
+  b.type="button";
+  b.textContent="Case Archive";
+  b.className="secondary";
+  b.onclick=function(){
+    if(typeof archivedCases==="function"){
+      const app=document.getElementById("app");
+      if(app) app.innerHTML=archivedCases();
+    }
+  };
+  const nav=document.querySelector("nav");
+  if(nav) nav.appendChild(b);
+});
 </script></body></html>
