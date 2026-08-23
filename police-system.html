@@ -1,10 +1,10 @@
-<!doctype html><html><head><script>(function(){try{if(!sessionStorage.getItem("police_session"))window.location.replace("/");}catch(e){window.location.replace("/");}})();</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vibe-Holdings Police Management System</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+<!doctype html><html><head><script>(function(){try{if(!sessionStorage.getItem("police_session"))window.location.replace("/");}catch(e){window.location.replace("/");}})();</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vibe-Holdings Police Management System</title><script></script><style>
 *{box-sizing:border-box}body{margin:0;font:14px Arial;background:#eef2f6;color:#17212b}header{height:64px;background:#102a43;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}.brand{font-weight:800;font-size:18px}.brand small{display:block;font-size:10px;color:#c9d5df}button{border:0;border-radius:7px;padding:9px 13px;font-weight:700;cursor:pointer}.primary{background:#173f5f;color:white}.secondary{background:#e5edf3;color:#173047}.danger{background:#fee2e2;color:#991b1b}.layout{display:grid;grid-template-columns:235px 1fr;min-height:calc(100vh - 64px)}nav{background:white;border-right:1px solid #d8e0e7;padding:12px;position:sticky;top:64px;height:calc(100vh - 64px)}nav button{display:block;width:100%;text-align:left;background:transparent;color:#253746;margin-bottom:4px}nav button.active{background:#173f5f;color:#fff}main{padding:22px;max-width:1500px;width:100%;margin:auto}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{background:#fff;border:1px solid #dbe2e8;border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:0 2px 5px #00000008}.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:#fff;border:1px solid #dbe2e8;border-radius:10px;padding:15px}.stat b{font-size:25px;display:block;margin-top:5px}h1{margin:0 0 5px;font-size:25px}h2{font-size:18px}label{display:block;font-size:11px;font-weight:800;margin-bottom:5px}input,select,textarea{width:100%;padding:9px;border:1px solid #cbd5df;border-radius:7px;font:inherit}textarea{min-height:120px}.full{grid-column:1/-1}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.muted{font-size:12px;color:#687585}.badge{display:inline-block;padding:3px 7px;border-radius:12px;font-size:10px;font-weight:800;background:#dcfce7;color:#166534}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal.show{display:flex}.modalbox{background:white;border-radius:12px;width:min(900px,100%);max-height:90vh;overflow:auto;padding:20px}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:12px;vertical-align:top}th{background:#f5f7f9}.empty{text-align:center;padding:30px;color:#687585}.search{margin-bottom:12px}@media(max-width:900px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;display:flex;overflow:auto;gap:4px}nav button{width:auto;white-space:nowrap}.grid,.statgrid{grid-template-columns:1fr}main{padding:12px}}
 </style>
 <style id="anti-zoom">
 html,body{touch-action:pan-x pan-y;overscroll-behavior:none}
 </style>
-<script id="anti-zoom-script">
+<script>
 (function(){
   document.addEventListener('wheel',function(e){
     if(e.ctrlKey){e.preventDefault();}
@@ -326,19 +326,8 @@ async function saveCaseEvent(caseId){
   }catch(e){alert(e.message)}
 }
 
-function printCase(id){
-  let c=D.cases.find(x=>x.id===id);
-  if(!c)return;
-  let w=window.open('','_blank','width=420,height=800');
-  if(!w){alert('Allow pop-ups for this site.');return}
-  const html=`<html><head><title>${esc(c.case_number)}</title>
-  <style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}p{white-space:pre-wrap}</style>
-  </head><body><h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1>
-  <b>${esc(c.case_number)}</b><p>${esc(c.title)}</p>
-  <h2>SUMMARY</h2><p>${esc(c.summary)}</p>
-  <h2>STATUS</h2><p>${esc(c.status)} / ${esc(c.priority)}</p>
-  <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
-  <script>
+function printCase(id){let c=D.cases.find(x=>x.id===id);let w=window.open('','_blank','width=420,height=800');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><head><title>${esc(c.case_number)}</title><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}p{white-space:pre-wrap}</style></head><body><h1>VIBE-HOLDINGS<br>CASE SUMMARY</h1><b>${esc(c.case_number)}</b><p>${esc(c.title)}</p><h2>SUMMARY</h2><p>${esc(c.summary)}</p><h2>STATUS</h2><p>${esc(c.status)} / ${esc(c.priority)}</p><script>onload=()=>setTimeout(()=>print(),300)<\/script>
+<script>
 document.addEventListener("DOMContentLoaded",function(){
   const b=document.createElement("button");
   b.id="caseArchiveButton";
@@ -346,7 +335,9 @@ document.addEventListener("DOMContentLoaded",function(){
   b.textContent="Case Archive";
   b.className="secondary";
   b.onclick=function(){
-    if(typeof archivedCases==="function"){
+    if(typeof openTab==="function") openTab("cases-archive");
+    else if(typeof showTab==="function") showTab("cases-archive");
+    else if(typeof render==="function"){
       const app=document.getElementById("app");
       if(app) app.innerHTML=archivedCases();
     }
@@ -354,42 +345,8 @@ document.addEventListener("DOMContentLoaded",function(){
   const nav=document.querySelector("nav");
   if(nav) nav.appendChild(b);
 });
-</script></body></html>`;
-  w.document.write(html);
-  w.document.close();
-}
-function printReport(id){let r=D.reports.find(x=>x.id===id);let w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><body style="font:14px Arial;padding:30px"><h1>${esc(r.title)}</h1><p>${esc(r.report_number)} • ${esc(r.report_type)}</p><pre style="white-space:pre-wrap;font:inherit">${esc(r.body)}</pre><script>onload=()=>setTimeout(()=>print(),300)<\/script><script>
-document.addEventListener("DOMContentLoaded",function(){
-  const b=document.createElement("button");
-  b.id="caseArchiveButton";
-  b.type="button";
-  b.textContent="Case Archive";
-  b.className="secondary";
-  b.onclick=function(){
-    if(typeof archivedCases==="function"){
-      const app=document.getElementById("app");
-      if(app) app.innerHTML=archivedCases();
-    }
-  };
-  const nav=document.querySelector("nav");
-  if(nav) nav.appendChild(b);
-});
-</script></body></html>`);w.document.close()}
+</script>
+</body></html>`);w.document.close()}
+function printReport(id){let r=D.reports.find(x=>x.id===id);let w=window.open('','_blank');if(!w){alert('Allow pop-ups for this site.');return}w.document.write(`<html><body style="font:14px Arial;padding:30px"><h1>${esc(r.title)}</h1><p>${esc(r.report_number)} • ${esc(r.report_type)}</p><pre style="white-space:pre-wrap;font:inherit">${esc(r.body)}</pre><script>onload=()=>setTimeout(()=>print(),300)<\/script><\/body><\/html>`);w.document.close()}
 loadAll();
-</script><script>
-document.addEventListener("DOMContentLoaded",function(){
-  const b=document.createElement("button");
-  b.id="caseArchiveButton";
-  b.type="button";
-  b.textContent="Case Archive";
-  b.className="secondary";
-  b.onclick=function(){
-    if(typeof archivedCases==="function"){
-      const app=document.getElementById("app");
-      if(app) app.innerHTML=archivedCases();
-    }
-  };
-  const nav=document.querySelector("nav");
-  if(nav) nav.appendChild(b);
-});
 </script></body></html>
