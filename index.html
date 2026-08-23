@@ -20,6 +20,26 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .error{display:none;margin-top:14px;padding:10px;border-radius:7px;background:#fee2e2;color:#991b1b;font-size:12px}
 .footer{text-align:center;margin-top:20px;color:#8a96a3;font-size:10px}
 </style>
+
+<style id="anti-zoom">
+html,body{touch-action:pan-x pan-y;overscroll-behavior:none}
+</style>
+<script id="anti-zoom-script">
+(function(){
+  document.addEventListener('wheel',function(e){
+    if(e.ctrlKey){e.preventDefault();}
+  },{passive:false});
+  document.addEventListener('keydown',function(e){
+    if(e.ctrlKey && (e.key==='+' || e.key==='-' || e.key==='=' || e.key==='0')){
+      e.preventDefault();
+    }
+  },{passive:false});
+  document.addEventListener('gesturestart',function(e){e.preventDefault();},{passive:false});
+  document.addEventListener('gesturechange',function(e){e.preventDefault();},{passive:false});
+  document.addEventListener('gestureend',function(e){e.preventDefault();},{passive:false});
+})();
+</script>
+
 </head>
 <body>
 <div class="login">
