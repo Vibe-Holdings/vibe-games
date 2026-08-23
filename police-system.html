@@ -20,7 +20,43 @@ html,body{touch-action:pan-x pan-y;overscroll-behavior:none}
 })();
 </script>
 
-</head><body><header><div class="brand">Vibe-Holdings Police Management System<small>Investigation & Records Management</small></div><div class="actions"><button class="secondary" onclick="loadAll()">↻ Refresh</button><button class="primary" onclick="newCase()">+ New Case</button></div></header><div class="layout"><nav id="nav"><button class="active" onclick="go('dashboard',this)">Dashboard</button><button onclick="go('cases',this)">Cases</button><button onclick="go('incidents',this)">Incidents</button><button onclick="go('people',this)">People</button><button onclick="go('officers',this)">Officers</button><button onclick="go('evidence',this)">Evidence</button><button onclick="go('statements',this)">Statements</button><button onclick="go('tasks',this)">Tasks</button><button onclick="go('reports',this)">Reports</button><button onclick="go('search',this)">Search</button></nav><main id="app">Loading...</main></div><div id="modal" class="modal"><div class="modalbox"><div class="row"><h2 id="mt">Record</h2><button class="secondary" onclick="closeModal()">Close</button></div><div id="mb"></div></div></div>
+
+<style id="app-shell">
+:root{
+  --app-bg:#f2f3f5;--app-surface:#fff;--app-border:#d8dbe0;
+  --app-text:#16181d;--app-muted:#666d78;--app-accent:#173b67;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--app-bg);color:var(--app-text);
+font-family:Inter,Segoe UI,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+-webkit-tap-highlight-color:transparent}
+body{font-size:15px}
+button,input,select,textarea{font:inherit}
+button{min-height:44px;border-radius:10px;border:1px solid var(--app-border);background:var(--app-surface);
+color:var(--app-text);padding:0 14px;font-weight:600;cursor:pointer}
+button:hover{background:#f7f8fa}
+button.primary,.primary{background:var(--app-accent);color:#fff;border-color:var(--app-accent)}
+input,select,textarea{min-height:44px;border:1px solid var(--app-border);border-radius:10px;padding:10px 12px;background:#fff;color:var(--app-text)}
+textarea{min-height:90px}
+.card,.panel,.section,.box{border:1px solid var(--app-border);border-radius:14px;background:var(--app-surface);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.topbar,.navbar,.header{background:#111827!important;color:#fff!important;border:0!important;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.sidebar{background:#111827!important;color:#fff!important;border-right:0!important}
+a{color:inherit}
+table{border-collapse:separate;border-spacing:0;width:100%;background:#fff;border:1px solid var(--app-border);border-radius:12px;overflow:hidden}
+th{background:#f5f6f8;text-align:left;font-weight:700}
+th,td{padding:11px 12px;border-bottom:1px solid var(--app-border)}
+tr:last-child td{border-bottom:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:720px){
+  body{font-size:16px}
+  .sidebar{position:static!important;width:100%!important}
+  .grid{grid-template-columns:1fr!important}
+  table{display:block;overflow-x:auto}
+}
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+</head><body class="app-body"><header><div class="brand">Vibe-Holdings Police Management System<small>Investigation & Records Management</small></div><div class="actions"><button class="secondary" onclick="loadAll()">↻ Refresh</button><button class="primary" onclick="newCase()">+ New Case</button></div></header><div class="layout"><nav id="nav"><button class="active" onclick="go('dashboard',this)">Dashboard</button><button onclick="go('cases',this)">Cases</button><button onclick="go('incidents',this)">Incidents</button><button onclick="go('people',this)">People</button><button onclick="go('officers',this)">Officers</button><button onclick="go('evidence',this)">Evidence</button><button onclick="go('statements',this)">Statements</button><button onclick="go('tasks',this)">Tasks</button><button onclick="go('reports',this)">Reports</button><button onclick="go('search',this)">Search</button></nav><main id="app">Loading...</main></div><div id="modal" class="modal"><div class="modalbox"><div class="row"><h2 id="mt">Record</h2><button class="secondary" onclick="closeModal()">Close</button></div><div id="mb"></div></div></div>
 <script>
 const URL='https://hrqhwfbhqpjhmuvdrrzp.supabase.co';const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc';const sb=supabase.createClient(URL,KEY);let D={cases:[],incidents:[],persons:[],officers:[],evidence:[],statements:[],tasks:[],reports:[],events:[]};let page='dashboard';
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const v=id=>document.getElementById(id)?.value.trim()||'';const form=(l,id,x='',a=false)=>`<div class="${a?'full':''}"><label>${l}</label>${a?`<textarea id="${id}">${esc(x)}</textarea>`:`<input id="${id}" value="${esc(x)}">`}</div>`;const sel=(l,id,o,x)=>`<div><label>${l}</label><select id="${id}">${o.map(z=>`<option ${z===x?'selected':''}>${esc(z)}</option>`).join('')}</select></div>`;
