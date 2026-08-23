@@ -30,13 +30,8 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;bor
 <nav id="nav">
  <button class="active" data-tab="cases">Cases</button>
  <button data-tab="archive">Case Archive</button>
- <button data-tab="incidents">Incidents</button>
  <button data-tab="people">People</button>
  <button data-tab="officers">Officers</button>
- <button data-tab="evidence">Evidence</button>
- <button data-tab="statements">Statements</button>
- <button data-tab="tasks">Tasks</button>
- <button data-tab="reports">Reports</button>
 </nav>
 <main>
  <div id="notice"></div>
@@ -84,11 +79,6 @@ function render(){
  else if(currentTab==="archive")renderArchive();
  else if(currentTab==="people")simpleList("People",people,p=>[p.reference,[p.first_name,p.last_name].filter(Boolean).join(" ")]);
  else if(currentTab==="officers")simpleList("Officers",officers,p=>[p.collar_number,[p.first_name,p.last_name].filter(Boolean).join(" ")]);
- else if(currentTab==="incidents")simpleList("Incidents",incidents,p=>[p.incident_number,p.title]);
- else if(currentTab==="evidence")simpleList("Evidence",evidence,p=>[p.evidence_number,p.description]);
- else if(currentTab==="statements")simpleList("Statements",statements,p=>[p.statement_number,p.status]);
- else if(currentTab==="tasks")simpleList("Tasks",tasks,p=>[p.title,p.status]);
- else simpleList("Reports",reports,p=>[p.report_number,p.title]);
 }
 function renderCases(){
  const open=cases.filter(c=>c.status!=="Closed"&&c.archived!==true);
