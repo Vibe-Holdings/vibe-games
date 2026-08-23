@@ -149,7 +149,7 @@ async function viewPerson(id){
  <p><b>Email:</b> ${esc(p.email||"—")}</p>
  <hr><h3>Tickets (${tr.length})</h3>
  ${tr.map(t=>`<p><b>${esc(t.ticket_number)}</b> — ${esc(t.registration_plate||"No plate")} — ${esc(t.offence)} — £${Number(t.amount).toFixed(2)} — ${esc(t.status)}</p>`).join("")||"<p>No tickets.</p>"}
- <div class="actions"><button class="primary" onclick="issueTicket('${id}')">Issue Ticket</button> <button onclick="printPersonLookup('${id}')">Print Lookup</button> <button onclick="printPersonLookup('${id}')">Print Lookup</button><button class="secondary" onclick="printPerson('${id}')">Print Lookup</button></div>`);
+ <div class="actions"><button class="primary" onclick="issueTicket('${id}')">Issue Ticket</button>  </div>`);
 }
 function ticketList(){
  const mine=currentOfficer?tickets.filter(t=>t.officer_id===currentOfficer.id):tickets;
@@ -203,12 +203,7 @@ async function savePerson(){
 }
 
 
-async function printPersonLookup(personId){
-  try{
-    const person=(window.people||[]).find(x=>x.id===personId);
-    if(!person){ alert("Person not found."); return; }
-
-    // The printer bridge reads person_id + job_type from the same queue
+// The printer bridge reads person_id + job_type from the same queue
     // used by ticket printing. Lookup jobs do not have a ticket_id.
     const {error}=await sb.from("ticket_print_queue").insert({
       ticket_id:null,
@@ -228,6 +223,33 @@ async function printPersonLookup(personId){
     console.error(e);
     alert("Could not send lookup to printer: "+(e.message||e));
   }
+}
+
+async function printPersonLookup(personId){
+  const person=(window.people||[]).find(x=>x.id===personId);
+  if(!person){showPrintMessage("Person not found.",true);return;}
+  const buttons=[...document.querySelectorAll('[data-print-lookup]')];
+  buttons.forEach(b=>{b.disabled=true;b.textContent="Sending…";});
+  try{
+    const {error}=await sb.from("ticket_print_queue").insert({
+      ticket_id:null,person_id:person.id,job_type:"person_lookup",status:"Queued"
+    });
+    if(error) throw error;
+    showPrintMessage("✓ Lookup sent to printer.");
+  }catch(error){
+    console.error(error);
+    showPrintMessage("Could not send lookup to printer: "+(error.message||error),true);
+  }finally{
+    buttons.forEach(b=>{b.disabled=false;b.textContent="🖨 Print Lookup";});
+  }
+}
+function showPrintMessage(message,isError=false){
+  let el=document.getElementById("print-lookup-message");
+  if(!el){el=document.createElement("div");el.id="print-lookup-message";
+    el.style.cssText="position:fixed;right:22px;bottom:22px;z-index:99999;padding:13px 16px;border-radius:10px;background:#166534;color:#fff;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.2);max-width:420px;";
+    document.body.appendChild(el);}
+  el.textContent=message; el.style.background=isError?"#991b1b":"#166534";
+  clearTimeout(window.__printLookupToast);window.__printLookupToast=setTimeout(()=>el.remove(),4000);
 }
 
 function issueTicket(personId){
