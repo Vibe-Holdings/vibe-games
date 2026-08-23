@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Police System — Applications</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#eef2f6;color:#17212b;font-family:Arial,sans-serif}
+header{background:#102a43;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:19px;font-weight:800}.brand small{display:block;font-size:10px;color:#cbd5df;margin-top:3px}
+main{max-width:1000px;margin:auto;padding:28px 18px}.muted{color:#687585;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px}
+.card{background:#fff;border:1px solid #dbe2e8;border-radius:12px;padding:22px;box-shadow:0 5px 18px #00000009}
+.card h2{margin:0 0 7px}.card p{color:#687585;font-size:13px;min-height:35px}
+button{border:0;border-radius:8px;padding:11px 15px;font-weight:800;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e6edf3;color:#173047}
+.logout{background:#fee2e2;color:#991b1b}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Vibe-Holdings Police Management System<small>Application Portal</small></div>
+  <div>
+    <span id="user"></span>
+    <button class="logout" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+<main>
+  <h1>Applications</h1>
+  <div class="muted">Select an application. Your login is required for access.</div>
+  <div class="grid">
+    <div class="card">
+      <h2>📁 Police Management System</h2>
+      <p>Cases, incidents, people, officers, evidence, statements, reports and investigations.</p>
+      <button class="primary" onclick="openApp('police-system.html')">Open Police System</button>
+    </div>
+    <div class="card">
+      <h2>👮 Officer App</h2>
+      <p>People lookup, officer dashboard and ticket issuing.</p>
+      <button class="primary" onclick="openApp('officer-app.html')">Open Officer App</button>
+    </div>
+  </div>
+</main>
+<script>
+(function(){
+  const s=sessionStorage.getItem("police_session");
+  if(!s){location.replace("index.html");return}
+  try{
+    const u=JSON.parse(s);
+    document.getElementById("user").textContent=(u.username||"Officer")+" • "+(u.role||"");
+  }catch(e){location.replace("index.html")}
+})();
+function openApp(path){location.href=path}
+function logout(){sessionStorage.removeItem("police_session");location.replace("index.html")}
+</script>
+</body>
+</html>
