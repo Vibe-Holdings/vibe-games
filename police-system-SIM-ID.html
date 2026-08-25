@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Vibe-Holdings Police Management System</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f3f5f7;color:#17212b}
+header{background:#12304a;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:20px;margin:0}header small{opacity:.8}
+nav{width:230px;background:#fff;border-right:1px solid #d8dee5;position:fixed;top:76px;bottom:0;padding:14px}
+nav button{width:100%;padding:13px;margin-bottom:8px;text-align:left;background:#fff;border:1px solid #d8dee5;border-radius:10px;font-weight:700}
+nav button.active{background:#173f5f;color:#fff}
+main{margin-left:230px;padding:22px;max-width:1400px}
+.card{background:#fff;border:1px solid #d8dee5;border-radius:14px;padding:18px;margin-bottom:16px}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+label{font-weight:700;font-size:13px;display:block;margin-bottom:5px}input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5df;border-radius:9px;font:inherit}textarea{min-height:110px}
+button.action{padding:10px 14px;border:0;border-radius:9px;background:#173f5f;color:#fff;font-weight:700}button.secondary{padding:10px 14px;border:1px solid #cbd5df;border-radius:9px;background:#fff;font-weight:700}button.danger{padding:10px 14px;border:1px solid #fecaca;border-radius:9px;background:#fee2e2;color:#991b1b;font-weight:700}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;border-bottom:1px solid #e5e7eb}th{background:#f7f8fa}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;background:#e8eef5;font-size:12px;font-weight:700}.muted{color:#687786}.notice{padding:12px;border-radius:9px;margin-bottom:14px}.error{background:#fee2e2;color:#991b1b}.ok{background:#dcfce7;color:#166534}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{background:#fff;border:1px solid #d8dee5;border-radius:12px;padding:14px}.stat b{display:block;font-size:24px;margin-top:5px}
+@media(max-width:750px){nav{position:static;width:auto;border:0;display:flex;overflow:auto;background:transparent;padding:8px}nav button{min-width:130px}.desktop-only{display:none}main{margin:0;padding:10px}.grid,.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.statgrid{grid-template-columns:1fr}header{position:sticky;top:0;z-index:10}}
+</style>
+</head>
+<body>
+<header>
+ <div><h1>Vibe-Holdings Police Management System</h1><small>Investigation & Records Management • CLEAN BUILD v2026.08.23</small></div>
+ <button class="secondary" onclick="location.reload()">↻ Refresh</button>
+</header>
+<nav id="nav">
+ <button class="active" data-tab="cases">Cases</button>
+ <button data-tab="archive">Case Archive</button>
+ <button data-tab="incidents">Incidents</button>
+ <button data-tab="people">People</button>
+ <button data-tab="officers">Officers</button>
+ <button data-tab="evidence">Evidence</button>
+ <button data-tab="statements">Statements</button>
+ <button data-tab="tasks">Tasks</button>
+ <button data-tab="reports">Reports</button>
+  <button data-tab="simids">SIM IDs</button>
+</nav>
+<main>
+ <div id="notice"></div>
+ <div id="app">Loading clean build…</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+/* This file is deliberately self-contained. No old print/template code is used. */
+const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
+let sb=null;
+let cases=[],people=[],officers=[],incidents=[],evidence=[],statements=[],tasks=[],reports=[];
+let currentTab="cases";
+
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function note(msg,error=false){$("notice").innerHTML='<div class="notice '+(error?"error":"ok")+'">'+esc(msg)+'</div>';setTimeout(()=>$("notice").innerHTML="",5000)}
+async function get(table,order){
+ if(!sb)return [];
+ let q=sb.from(table).select("*");
+ if(order)q=q.order(order,{ascending:false});
+ const r=await q;
+ if(r.error){console.warn(table,r.error.message);return []}
+ return r.data||[];
+}
+async function load(){
+ $("app").innerHTML="Loading records…";
+ if(!window.supabase){$("app").innerHTML='<div class="card"><h2>Supabase library failed to load</h2></div>';return}
+ /* Supabase client is only created when a key is supplied. */
+ if(!SUPABASE_KEY){
+   $("app").innerHTML='<div class="card"><h2>Clean build is installed</h2><p>Supabase is configured. Loading records…</p></div>';
+   return;
+ }
+ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ [cases,people,officers,incidents,evidence,statements,tasks,reports]=await Promise.all([
+   get("cases","created_at"),get("persons","created_at"),get("officers","created_at"),
+   get("incidents","created_at"),get("evidence","created_at"),get("statements","created_at"),
+   get("tasks","created_at"),get("reports","created_at")
+ ]);
+ render();
+}
+function render(){
+ if(currentTab==="cases")renderCases();
+ else if(currentTab==="archive")renderArchive();
+ else if(currentTab==="people")simpleList("People",people,p=>[p.reference,[p.first_name,p.last_name].filter(Boolean).join(" ")]);
+ else if(currentTab==="officers")simpleList("Officers",officers,p=>[p.collar_number,[p.first_name,p.last_name].filter(Boolean).join(" ")]);
+ else if(currentTab==="incidents")simpleList("Incidents",incidents,p=>[p.incident_number,p.title]);
+ else if(currentTab==="evidence")simpleList("Evidence",evidence,p=>[p.evidence_number,p.description]);
+ else if(currentTab==="statements")simpleList("Statements",statements,p=>[p.statement_number,p.status]);
+ else if(currentTab==="tasks")simpleList("Tasks",tasks,p=>[p.title,p.status]);
+ else if(currentTab==="simids")renderSimIds();
+  else simpleList("Reports",reports,p=>[p.report_number,p.title]);
+}
+function renderCases(){
+ const open=cases.filter(c=>c.status!=="Closed"&&c.archived!==true);
+ $("app").innerHTML=`<div class="row"><div><h2>Cases</h2><p class="muted">Cases are retained. They cannot be deleted.</p></div><button class="action" onclick="newCase()">+ New Case</button></div>
+ <div class="statgrid"><div class="stat">Total<b>${cases.length}</b></div><div class="stat">Open<b>${open.length}</b></div><div class="stat">Closed<b>${cases.filter(c=>c.status==="Closed").length}</b></div><div class="stat">Critical<b>${cases.filter(c=>c.priority==="Critical").length}</b></div></div>
+ <div class="card"><input id="caseSearch" placeholder="Search case number, title, category…" oninput="renderCaseRows()"></div>
+ <div class="card"><div style="overflow:auto"><table><thead><tr><th>Case</th><th>Title</th><th>Status</th><th>Priority</th><th>Category</th><th>Actions</th></tr></thead><tbody id="caseRows"></tbody></table></div></div>`;
+ renderCaseRows();
+}
+function renderCaseRows(){
+ const q=($("caseSearch")?.value||"").toLowerCase();
+ const rows=cases.filter(c=>`${(c.number||c.case_number)||""} ${c.title||""} ${c.category||""}`.toLowerCase().includes(q));
+ $("caseRows").innerHTML=rows.map(c=>`<tr><td><b>${esc(c.number||(c.number||c.case_number)||"—")}</b></td><td>${esc(c.title||"—")}</td><td><span class="badge">${esc(c.status||"—")}</span></td><td>${esc(c.priority||"—")}</td><td>${esc(c.category||"—")}</td><td><button class="secondary" onclick="openCase('${c.id}')">Open</button> ${c.status!=="Closed"?`<button class="action" onclick="closeCase('${c.id}')">Close & Archive</button>`:""}</td></tr>`).join("")||'<tr><td colspan="6">No cases found.</td></tr>';
+}
+function renderArchive(){
+ const list=cases.filter(c=>c.status==="Closed"||c.archived===true);
+ $("app").innerHTML=`<div class="card"><h2>Case Archive</h2><p class="muted">Closed cases remain available here and cannot be deleted.</p><div style="overflow:auto"><table><tr><th>Case</th><th>Title</th><th>Closed</th><th>Priority</th><th></th></tr>${list.map(c=>`<tr><td>${esc((c.number||c.case_number))}</td><td>${esc(c.title)}</td><td>${esc(c.archived_at||"—")}</td><td>${esc(c.priority||"—")}</td><td><button class="secondary" onclick="openCase('${c.id}')">View</button></td></tr>`).join("")||'<tr><td colspan="5">Archive empty.</td></tr>'}</table></div></div>`;
+}
+
+function openCase(id){
+ const c=cases.find(x=>x.id===id); if(!c)return;
+ const render=()=>{
+   const suspects=window.caseSuspects||[];
+   const statements=window.caseStatements||[];
+   $("app").innerHTML=`
+   <div class="row">
+     <div><h2>${esc(c.number||c.case_number||"Case")} — ${esc(c.title||"Untitled")}</h2>
+     <span class="badge">${esc(c.status||"Open")}</span></div>
+     <button class="secondary" onclick="setTab('cases')">← Back</button>
+   </div>
+
+   <div class="statgrid">
+     <div class="stat">Suspects<b>${suspects.length}</b></div>
+     <div class="stat">Statements<b>${statements.length}</b></div>
+     <div class="stat">Priority<b>${esc(c.priority||"—")}</b></div>
+     <div class="stat">Status<b>${esc(c.status||"—")}</b></div>
+   </div>
+
+   <div class="card">
+     <h3>Case Details</h3>
+     <p><b>Case Number:</b> ${esc(c.number||c.case_number||"—")}</p>
+     <p><b>Category:</b> ${esc(c.category||"—")}</p>
+     <p><b>Summary:</b><br>${esc(c.summary||"No summary.")}</p>
+     ${c.status!=="Closed"?`<div class="actions">
+       <button class="action" onclick="startCaseUpdate('${c.id}')">Update Case</button>
+       <button class="action" onclick="startCaseClose('${c.id}')">Close & Archive</button>
+     </div>`:"<p class='muted'>This case is closed and archived. It cannot be deleted.</p>"}
+   </div>
+
+   <div class="card">
+     <div class="row"><h3>Suspects</h3><button class="action" onclick="addSuspect('${c.id}')">+ Add Suspect</button></div>
+     ${suspects.map(x=>`
+       <div class="card">
+         <b>${esc(x.name||"Unnamed")}</b>
+         <p class="muted">${esc(x.reference||"")} ${x.role?"• "+esc(x.role):""}</p>
+       </div>`).join("") || "<p class='muted'>No suspects have been added to this case.</p>"}
+   </div>
+
+   <div class="card">
+     <div class="row"><h3>Statements</h3><button class="action" onclick="addStatement('${c.id}')">+ Add Statement</button></div>
+     ${statements.map(x=>`
+       <div class="card">
+         <div class="row">
+           <div><b>${esc(x.statement_number||"Statement")}</b><p class="muted">${esc(x.witness_name||"Unnamed")} • ${esc(x.statement_type||"Typed")}</p></div>
+           <button class="secondary" onclick="viewStatement('${x.id}')">View</button>
+         </div>
+       </div>`).join("") || "<p class='muted'>No statements have been added to this case.</p>"}
+   </div>
+
+   <div class="card">
+     <h3>Case Photos</h3>
+     <p class="muted">On a phone, choose the camera option to take a photo for this case.</p>
+     <input id="photoInput" type="file" accept="image/*" capture="environment">
+     <div class="actions"><button class="action" onclick="uploadPhoto('${c.id}')">Upload Photo</button></div>
+   </div>`;
+ };
+ window.caseSuspects=[];
+ window.caseStatements=[];
+ render();
+ if(sb){
+   Promise.all([
+     sb.from("case_suspects").select("*").eq("case_id",id).order("created_at",{ascending:false}),
+     sb.from("case_statements").select("*").eq("case_id",id).order("created_at",{ascending:false})
+   ]).then(([a,b])=>{
+     window.caseSuspects=a.error?[]:(a.data||[]);
+     window.caseStatements=b.error?[]:(b.data||[]);
+     render();
+   });
+ }
+}
+
+function addSuspect(caseId){
+ openModalSimple("Add Suspect",`
+   <label>Person / suspect name</label>
+   <input id="susName" placeholder="Full name">
+   <label>Reference</label>
+   <input id="susRef" placeholder="Person reference">
+   <label>Status / role</label>
+   <input id="susRole" placeholder="Suspect / person of interest">
+   <div class="actions"><button class="action" onclick="saveSuspect('${caseId}')">Add Suspect</button></div>`);
+}
+
+async function saveSuspect(caseId){
+ const name=$("susName").value.trim();
+ if(!name){alert("Enter the suspect name.");return}
+ const r=await sb.from("case_suspects").insert({
+   case_id:caseId,name:name,reference:$("susRef").value.trim(),role:$("susRole").value.trim()
+ });
+ if(r.error){alert("Could not add suspect: "+r.error.message);return}
+ closeSimpleModal();
+ openCase(caseId);
+}
+
+function addStatement(caseId){
+ openModalSimple("Add Statement",`
+   <div class="grid">
+     <div><label>Statement type</label>
+       <select id="statementType" onchange="toggleStatementMode()">
+         <option value="Typed">Typed</option>
+         <option value="Handwritten">Handwritten</option>
+       </select>
+     </div>
+     <div><label>Witness / person name</label><input id="statementWitness" placeholder="Full name"></div>
+   </div>
+
+   <div id="typedBox" style="margin-top:14px">
+     <label>Statement</label>
+     <textarea id="statementText" style="min-height:280px" placeholder="Type the full statement here…"></textarea>
+   </div>
+
+   <div id="handBox" style="display:none;margin-top:14px">
+     <p class="muted">Write the statement using a finger, stylus or mouse.</p>
+     <canvas id="statementCanvas" style="width:100%;height:320px;border:2px solid #cbd5df;border-radius:10px;background:#fff;touch-action:none"></canvas>
+     <button class="secondary" onclick="clearStatementCanvas()">Clear</button>
+   </div>
+
+   <div class="actions"><button class="action" onclick="submitStatement('${caseId}')">Continue to E-sign</button></div>`);
+}
+
+function toggleStatementMode(){
+ const handwritten=$("statementType").value==="Handwritten";
+ $("typedBox").style.display=handwritten?"none":"block";
+ $("handBox").style.display=handwritten?"block":"none";
+ if(handwritten)setTimeout(initStatementCanvas,50);
+}
+
+let statementCanvas,statementCtx,statementDrawing=false;
+function initStatementCanvas(){
+ statementCanvas=$("statementCanvas"); if(!statementCanvas)return;
+ statementCanvas.width=statementCanvas.clientWidth*2;
+ statementCanvas.height=statementCanvas.clientHeight*2;
+ statementCtx=statementCanvas.getContext("2d");
+ statementCtx.scale(2,2); statementCtx.lineWidth=2; statementCtx.lineCap="round"; statementCtx.strokeStyle="#111";
+ const pos=e=>{const r=statementCanvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+ statementCanvas.onpointerdown=e=>{statementDrawing=true;const p=pos(e);statementCtx.beginPath();statementCtx.moveTo(p.x,p.y);statementCanvas.setPointerCapture(e.pointerId)};
+ statementCanvas.onpointermove=e=>{if(!statementDrawing)return;const p=pos(e);statementCtx.lineTo(p.x,p.y);statementCtx.stroke()};
+ statementCanvas.onpointerup=()=>statementDrawing=false;
+ statementCanvas.onpointercancel=()=>statementDrawing=false;
+}
+function clearStatementCanvas(){
+ if(statementCanvas&&statementCtx)statementCtx.clearRect(0,0,statementCanvas.clientWidth,statementCanvas.clientHeight);
+}
+
+function submitStatement(caseId){
+ const type=$("statementType").value;
+ const witness=$("statementWitness").value.trim();
+ if(!witness){alert("Enter the witness/person name.");return}
+ if(type==="Typed" && !$("statementText").value.trim()){alert("Type the statement first.");return}
+ if(type==="Handwritten" && !statementCanvas){alert("Open the handwritten option first.");return}
+ requireESign("save this statement",async(signedBy)=>{
+   try{
+     const num="ST-"+Date.now().toString().slice(-8);
+     if(type==="Typed"){
+       const r=await sb.from("case_statements").insert({
+         case_id:caseId,statement_number:num,witness_name:witness,
+         statement_type:"Typed",typed_text:$("statementText").value.trim(),
+         status:"Signed",signed_by:signedBy,signed_at:new Date().toISOString()
+       });
+       if(r.error)throw r.error;
+     }else{
+       const blob=await new Promise(resolve=>statementCanvas.toBlob(resolve,"image/png"));
+       if(!blob)throw new Error("Could not create handwritten statement image.");
+       const path=`cases/${caseId}/statements/${num}.png`;
+       const up=await sb.storage.from("case-photos").upload(path,blob,{contentType:"image/png"});
+       if(up.error)throw up.error;
+       const r=await sb.from("case_statements").insert({
+         case_id:caseId,statement_number:num,witness_name:witness,
+         statement_type:"Handwritten",storage_path:path,
+         status:"Signed",signed_by:signedBy,signed_at:new Date().toISOString()
+       });
+       if(r.error)throw r.error;
+     }
+     closeSimpleModal();
+     note("Statement saved and electronically signed.");
+     openCase(caseId);
+   }catch(e){alert("Could not save statement: "+e.message)}
+ });
+}
+
+function viewStatement(id){
+ const x=(window.caseStatements||[]).find(v=>v.id===id);if(!x)return;
+ let body="";
+ if(x.statement_type==="Typed"){
+   body=`<div style="white-space:pre-wrap;background:#f8fafc;border:1px solid #d8dee5;border-radius:10px;padding:15px;line-height:1.5">${esc(x.typed_text||"")}</div>`;
+ }else if(x.storage_path){
+   body=`<button class="action" onclick="viewStatementImage('${esc(x.storage_path)}')">Open Handwritten Statement</button>`;
+ }
+ openModalSimple("Statement",`
+   <p><b>${esc(x.statement_number||"Statement")}</b></p>
+   <p>${esc(x.witness_name||"Unnamed")} • ${esc(x.statement_type||"Typed")}</p>
+   ${body}
+   <hr><p class="muted">Signed by ${esc(x.signed_by||"—")} ${x.signed_at?"• "+esc(x.signed_at):""}</p>`);
+}
+
+async function viewStatementImage(path){
+ const r=await sb.storage.from("case-photos").createSignedUrl(path,600);
+ if(r.error){alert(r.error.message);return}
+ window.open(r.data.signedUrl,"_blank");
+}
+
+function openModalSimple(title,body){
+ document.getElementById("caseModal")?.remove();
+ const d=document.createElement("div");d.id="caseModal";
+ d.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:15px;z-index:100";
+ d.innerHTML=`<div style="background:#fff;width:min(800px,100%);max-height:95vh;overflow:auto;border-radius:14px;padding:18px">
+ <div class="row"><h2>${title}</h2><button class="secondary" onclick="closeSimpleModal()">Close</button></div>${body}</div>`;
+ document.body.appendChild(d);
+}
+function closeSimpleModal(){document.getElementById("caseModal")?.remove()}
+
+function requireESign(action,callback){
+ openModalSimple("Electronic Signature Required",`
+   <p>You must electronically sign before <b>${esc(action)}</b>.</p>
+   <label>Full name</label><input id="esignName" placeholder="Type your full name">
+   <p class="muted">Draw your signature below.</p>
+   <canvas id="esignCanvas" style="width:100%;height:180px;border:2px solid #cbd5df;border-radius:10px;background:#fff;touch-action:none"></canvas>
+   <div class="actions"><button class="secondary" onclick="clearESign()">Clear</button><button class="action" onclick="finishESign()">Sign & Continue</button></div>`);
+ window.pendingESign=callback;
+ setTimeout(initESign,50);
+}
+let esignCanvas,esignCtx,esignDrawing=false;
+function initESign(){
+ esignCanvas=$("esignCanvas");if(!esignCanvas)return;
+ esignCanvas.width=esignCanvas.clientWidth*2;esignCanvas.height=esignCanvas.clientHeight*2;
+ esignCtx=esignCanvas.getContext("2d");esignCtx.scale(2,2);esignCtx.lineWidth=2;esignCtx.lineCap="round";esignCtx.strokeStyle="#111";
+ const pos=e=>{const r=esignCanvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+ esignCanvas.onpointerdown=e=>{esignDrawing=true;const p=pos(e);esignCtx.beginPath();esignCtx.moveTo(p.x,p.y);esignCanvas.setPointerCapture(e.pointerId)};
+ esignCanvas.onpointermove=e=>{if(!esignDrawing)return;const p=pos(e);esignCtx.lineTo(p.x,p.y);esignCtx.stroke()};
+ esignCanvas.onpointerup=()=>esignDrawing=false;esignCanvas.onpointercancel=()=>esignDrawing=false;
+}
+function clearESign(){if(esignCanvas&&esignCtx)esignCtx.clearRect(0,0,esignCanvas.clientWidth,esignCanvas.clientHeight)}
+async function finishESign(){
+ const name=$("esignName").value.trim();if(!name){alert("Enter your full name.");return}
+ if(!esignCanvas){alert("Draw your signature.");return}
+ const callback=window.pendingESign;window.pendingESign=null;
+ closeSimpleModal();
+ if(callback)await callback(name);
+}
+
+function startCaseUpdate(id){
+ const c=cases.find(x=>x.id===id);if(!c)return;
+ requireESign("update this case",async(signedBy)=>{
+   openModalSimple("Update Case",`
+     <label>Title</label><input id="updateTitle" value="${esc(c.title||"")}">
+     <label>Priority</label><select id="updatePriority"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select>
+     <label>Category</label><input id="updateCategory" value="${esc(c.category||"")}">
+     <label>Summary</label><textarea id="updateSummary">${esc(c.summary||"")}</textarea>
+     <div class="actions"><button class="action" onclick="saveCaseUpdate('${c.id}','${esc(signedBy)}')">Save Signed Update</button></div>`);
+   $("updatePriority").value=c.priority||"Medium";
+ });
+}
+async function saveCaseUpdate(id,signedBy){
+ const r=await sb.from("cases").update({
+   title:$("updateTitle").value,priority:$("updatePriority").value,
+   category:$("updateCategory").value,summary:$("updateSummary").value
+ }).eq("id",id);
+ if(r.error){alert("Could not update case: "+r.error.message);return}
+ try{await sb.from("case_audit_log").insert({case_id:id,action:"Case updated",signed_by:signedBy,signed_at:new Date().toISOString()})}catch(e){}
+ closeSimpleModal();await load();openCase(id);
+}
+function startCaseClose(id){
+ requireESign("close and archive this case",async(signedBy)=>{
+   const r=await sb.from("cases").update({status:"Closed",archived:true,archived_at:new Date().toISOString()}).eq("id",id);
+   if(r.error){alert("Could not close case: "+r.error.message);return}
+   try{await sb.from("case_audit_log").insert({case_id:id,action:"Case closed and archived",signed_by:signedBy,signed_at:new Date().toISOString()})}catch(e){}
+   await load();setTab("archive");
+ });
+}
+
+function closeCase(id){startCaseClose(id)}
+async function uploadPhoto(caseId){
+ const f=$("photoInput")?.files?.[0];if(!f){note("Choose or take a photo first.",true);return}
+ if(!sb){note("Supabase is not configured.",true);return}
+ const path=`cases/${caseId}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;
+ const u=await sb.storage.from("case-photos").upload(path,f);
+ if(u.error){note("Photo upload failed: "+u.error.message,true);return}
+ const r=await sb.from("case_photos").insert({case_id:caseId,storage_path:path,file_name:f.name,mime_type:f.type,size_bytes:f.size});
+ if(r.error){note("Photo record failed: "+r.error.message,true);return}
+ note("Photo uploaded to case.");$("photoInput").value="";
+}
+function newCase(){
+ if(!sb){note("Supabase is not configured.",true);return}
+ $("app").innerHTML=`<div class="card"><h2>New Case</h2><div class="grid"><div><label>Case Number</label><input id="cn" value="VIBE-${Date.now().toString().slice(-6)}"></div><div><label>Title</label><input id="ct"></div><div><label>Priority</label><select id="cp"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></div><div><label>Category</label><input id="cc"></div><div style="grid-column:1/-1"><label>Summary</label><textarea id="cs"></textarea></div></div><div class="actions"><button class="action" onclick="saveCase()">Create Case</button><button class="secondary" onclick="setTab('cases')">Cancel</button></div></div>`;
+}
+async function saveCase(){
+ const caseNumber=$("cn").value.trim();
+ const r=await sb.from("cases").insert({number:caseNumber,title:$("ct").value,priority:$("cp").value,category:$("cc").value,summary:$("cs").value,status:"Open",archived:false}).select().single();
+ if(r.error){note("Could not create case: "+r.error.message,true);return}
+ cases.unshift(r.data);note("Case created.");setTab("cases");
+}
+function simpleList(title,data,mapper){
+ $("app").innerHTML=`<div class="card"><h2>${title}</h2><div style="overflow:auto"><table><tr><th>Reference</th><th>Name / Description</th></tr>${data.map(x=>{let a=mapper(x);return `<tr><td>${esc(a[0])}</td><td>${esc(a[1])}</td></tr>`}).join("")||'<tr><td colspan="2">No records.</td></tr>'}</table></div></div>`;
+}
+
+function simToken(){
+ const a=new Uint8Array(18); crypto.getRandomValues(a);
+ return "VH-SIM-"+Array.from(a,b=>b.toString(16).padStart(2,"0")).join("").toUpperCase();
+}
+function renderSimIds(){
+ if(!sb){$("app").innerHTML='<div class="card"><h2>Supabase is not configured.</h2></div>';return}
+ $("app").innerHTML=`<div class="row"><div><h2>SIM IDs</h2><p class="muted">Simulation IDs only. Not government-issued identification.</p></div></div>
+ <div class="card"><h3>Issue SIM ID</h3>
+ <div class="grid"><div><label>Person reference</label><input id="simPersonRef" placeholder="PER-123456"></div>
+ <div><label>Expiry (optional)</label><input id="simExpiry" type="date"></div></div>
+ <div class="actions"><button class="action" onclick="issueSimId()">Issue ID</button></div></div>
+ <div class="card"><h3>Issued SIM IDs</h3><div id="simIdRows">Loading…</div></div>`;
+ loadSimIds();
+}
+async function loadSimIds(){
+ const r=await sb.from("sim_ids").select("*,persons(id,reference,first_name,middle_name,last_name)").order("issued_at",{ascending:false});
+ if(r.error){$("simIdRows").innerHTML="<p class='muted'>Could not load SIM IDs: "+esc(r.error.message)+"</p>";return}
+ const rows=r.data||[];
+ $("simIdRows").innerHTML=rows.map(x=>{
+   const p=x.persons||{}; const n=[p.first_name,p.middle_name,p.last_name].filter(Boolean).join(" ");
+   return `<div class="card"><div class="row"><div><b>${esc(n||"Unknown")}</b><br><span class="badge">${esc(p.reference||"—")}</span></div><span class="badge">${esc(x.status)}</span></div>
+   <p class="muted">Token: <code>${esc(x.token)}</code><br>Issued: ${esc(x.issued_at||"—")} ${x.expires_at?"<br>Expires: "+esc(x.expires_at):""}</p>
+   <div class="actions"><button class="secondary" onclick="showSimQr('${esc(x.token)}')">Show QR</button>${x.status==="Active"?`<button class="danger" onclick="revokeSimId('${esc(x.id)}')">Revoke</button>`:""}</div></div>`;
+ }).join("")||"<p class='muted'>No SIM IDs issued.</p>";
+}
+async function issueSimId(){
+ const ref=($("simPersonRef").value||"").trim();
+ const expiry=$("simExpiry").value||null;
+ if(!ref){note("Enter a person reference.",true);return}
+ const p=await sb.from("persons").select("id,reference,first_name,middle_name,last_name").eq("reference",ref).maybeSingle();
+ if(p.error||!p.data){note("Person not found.",true);return}
+ const token=simToken();
+ const r=await sb.from("sim_ids").insert({person_id:p.data.id,token,status:"Active",expires_at:expiry?expiry+"T23:59:59Z":null}).select().single();
+ if(r.error){note("Could not issue SIM ID: "+r.error.message,true);return}
+ note("SIM ID issued: "+token);
+ renderSimIds();
+}
+async function revokeSimId(id){
+ if(!confirm("Revoke this SIM ID?"))return;
+ const r=await sb.from("sim_ids").update({status:"Revoked",revoked_at:new Date().toISOString()}).eq("id",id);
+ if(r.error){note("Could not revoke ID: "+r.error.message,true);return}
+ note("SIM ID revoked."); loadSimIds();
+}
+function showSimQr(token){
+ const d=document.createElement("div"); d.id="simQrModal";
+ d.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:15px;z-index:200";
+ d.innerHTML=`<div style="background:#fff;border-radius:14px;padding:20px;text-align:center;width:min(380px,100%)"><h2>Vibe-Holdings SIM ID</h2>
+ <div id="simQrBox" style="display:flex;justify-content:center;margin:15px"></div><p><b>${esc(token)}</b></p>
+ <p class="muted"><b>SIMULATION — NOT A GOVERNMENT ID</b><br>Scan only inside the Vibe-Holdings Police App.</p>
+ <button class="secondary" onclick="document.getElementById('simQrModal').remove()">Close</button></div>`;
+ document.body.appendChild(d);
+ const q=new QRCode(document.getElementById("simQrBox"),{text:token,width:220,height:220});
+}
+
+function setTab(tab){currentTab=tab;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));render()}
+document.querySelectorAll("#nav button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+load();
+</script>
+</body>
+</html>
