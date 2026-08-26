@@ -1,335 +1,51 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Officer App — Vibe-Holdings</title>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VHPD — Vibe-Holdings Police Department</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
-:root{--nav:#102a43;--nav2:#173f5f;--bg:#eef2f6;--card:#fff;--border:#d7dee6;--text:#17212b;--muted:#657486;--danger:#991b1b;--ok:#166534}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
-body{font-size:15px}
-button,input,select,textarea{font:inherit}
-button{min-height:44px;border:1px solid var(--border);border-radius:10px;padding:0 14px;font-weight:700;cursor:pointer;background:#fff;color:var(--text)}
-button.primary{background:var(--nav2);border-color:var(--nav2);color:#fff}
-button.danger{background:#fee2e2;border-color:#fecaca;color:var(--danger)}
-button:disabled{opacity:.55;cursor:not-allowed}
-input,select,textarea{width:100%;min-height:44px;border:1px solid #cbd5df;border-radius:10px;padding:10px 12px;background:#fff;color:var(--text)}
-textarea{min-height:110px;resize:vertical}
-header{background:var(--nav);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:10}
-.brand{font-weight:800;font-size:19px}.brand small{display:block;color:#c9d5df;font-size:11px;font-weight:500;margin-top:3px}
-main{max-width:1100px;margin:auto;padding:14px}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.full{grid-column:1/-1}
-label{display:block;font-size:12px;font-weight:800;margin:0 0 5px}
-.muted{color:var(--muted);font-size:13px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.person{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:9px}
-.person-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.badge{display:inline-block;background:#e8eef5;color:#173f5f;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:800}
-.notice{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:600}
-.notice.error{background:#fee2e2;color:var(--danger);border:1px solid #fecaca}
-.notice.ok{background:#dcfce7;color:var(--ok);border:1px solid #bbf7d0}
-.empty{padding:28px;text-align:center;color:var(--muted)}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}
-.modal.show{display:flex}.modalbox{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:18px}
-.modalhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
-th{background:#f5f7f9;font-weight:800}tr:last-child td{border-bottom:0}
-@media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.person-top{align-items:flex-start;flex-direction:column}main{padding:10px}header{padding:13px}.brand{font-size:17px}}
-</style>
-</head>
-<body>
-<header>
-  <div class="brand">Officer App<small>Vibe-Holdings • Training / Simulation System</small></div>
-  <div id="officerLabel">Not signed in</div>
-</header>
+body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#eef2f6;color:#17212b}
+header{height:62px;background:#102a43;color:#fff;display:flex;align-items:center;padding:0 16px;gap:10px;position:sticky;top:0;z-index:5}
+.logo{width:40px;height:40px;object-fit:contain;background:#fff;border-radius:8px}.brand b{font-size:18px}.brand small{display:block;font-size:10px}
+main{max-width:1100px;margin:auto;padding:18px}.card{background:#fff;border:1px solid #d8e0e8;border-radius:12px;padding:16px;margin-bottom:14px}
+button{border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e7edf2;color:#173047}
+input,textarea,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd5df;border-radius:8px;font:inherit}label{display:block;font-size:12px;font-weight:800;margin:10px 0 5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.service{background:#fff;border:1px solid #d8e0e8;border-radius:12px;padding:16px;cursor:pointer}.muted{font-size:12px;color:#687786}
+footer{text-align:center;color:#687786;font-size:11px;padding:20px}
+@media(max-width:700px){main{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}button{min-height:44px}}
+</style></head><body>
+<header><img class="logo" src="https://cdn.phototourl.com/free/2026-08-26-86cb6b53-6054-4849-8cbc-f163d7ac51c4.png"><div class="brand"><b>VHPD</b><small>Vibe-Holdings Police Department</small></div></header>
 <main>
-  <div id="notice"></div>
-  <nav class="tabs" aria-label="Main navigation">
-    <button type="button" class="primary" id="navLookup">People Lookup</button>
-    <button type="button" id="navTickets">My Tickets</button>
-    <button type="button" id="navDashboard">Dashboard</button>
-    <button type="button" id="navScanner">SIM ID Scanner</button>
-    <button type="button" id="refreshPeople">↻ Refresh People</button>
-  </nav>
-  <section id="app">Loading…</section>
-</main>
-
-<div id="modal" class="modal" role="dialog" aria-modal="true">
-  <div class="modalbox">
-    <div class="modalhead"><h2 id="modalTitle">Record</h2><button type="button" id="modalClose">Close</button></div>
-    <div id="modalBody"></div>
-  </div>
-</div>
-
-<script>
+<h1>Hello, <span id="who"></span></h1>
+<div class="grid">
+<div class=service onclick="people()">👤<b>People Lookup</b></div>
+<div class=service onclick="scanner()">📷<b>Scan ID</b></div>
+<div class=service onclick="tickets()">🎫<b>Tickets</b></div>
+<div class=service onclick="cases()">📁<b>Cases</b></div>
+<div class=service onclick="requests()">📋<b>Requests</b></div>
+<div class=service onclick="evidence()">📸<b>Evidence</b></div>
+<div class=service onclick="statements()">📝<b>Statements</b></div>
+</div><div id=area></div></main><footer>Roleplay System</footer><script>
 const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-
-let people=[],tickets=[],officers=[],cases=[],currentOfficer=null;
-
-const $=id=>document.getElementById(id);
-const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");
 const nameOf=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Unnamed";
-const showNotice=(msg,type="ok")=>{$("notice").innerHTML=`<div class="notice ${type}">${esc(msg)}</div>`;clearTimeout(window.noticeTimer);window.noticeTimer=setTimeout(()=>{$("notice").innerHTML=""},5000)};
-
-async function loadPeople(){
-  const r=await sb.from("persons").select("*").order("last_name",{ascending:true});
-  if(r.error){people=[];showNotice("People database error: "+r.error.message,"error");return false}
-  people=r.data||[];
-  return true;
-}
-async function loadOtherData(){
-  try{const r=await sb.from("tickets").select("*").order("issued_at",{ascending:false});tickets=r.error?[]:(r.data||[])}catch(e){tickets=[]}
-  try{const r=await sb.from("officers").select("*");officers=r.error?[]:(r.data||[])}catch(e){officers=[]}
-  try{const r=await sb.from("cases").select("*").order("created_at",{ascending:false});cases=r.error?[]:(r.data||[])}catch(e){cases=[]}
-}
-async function load(){
-  await loadPeople();
-  await loadOtherData();
-  updateOfficerLabel();
-  renderLookup();
-}
-function updateOfficerLabel(){
-  $("officerLabel").textContent=currentOfficer?`${currentOfficer.collar_number||"Officer"} — ${nameOf(currentOfficer)}`:"Not signed in";
-}
-
-function renderLookup(){
-  $("app").innerHTML=`
-  <div class="card">
-    <h1 style="margin:0 0 5px">People Lookup</h1>
-    <p class="muted">Search the training people database by name, reference, phone or email.</p>
-    <input id="peopleSearch" placeholder="Search people…" autocomplete="off">
-    <div class="actions"><button type="button" class="primary" id="addPersonBtn">+ Add Person</button></div>
-  </div>
-  <div id="peopleResults"></div>`;
-  $("peopleSearch").addEventListener("input",renderResults);
-  $("addPersonBtn").addEventListener("click",addPerson);
-  renderResults();
-}
-function renderResults(){
-  const q=($("peopleSearch")?.value||"").trim().toLowerCase();
-  const found=people.filter(p=>`${p.reference||""} ${p.first_name||""} ${p.middle_name||""} ${p.last_name||""} ${p.phone||""} ${p.email||""}`.toLowerCase().includes(q)).slice(0,100);
-  const target=$("peopleResults");
-  if(!target)return;
-  if(!found.length){target.innerHTML=`<div class="card empty">${people.length?"No matching people.":"No people are currently loaded."}</div>`;return}
-  target.innerHTML=found.map(p=>`
-    <article class="person">
-      <div class="person-top">
-        <div><strong>${esc(nameOf(p))}</strong><br><span class="badge">${esc(p.reference||"No reference")}</span></div>
-        <button type="button" class="primary openPerson" data-id="${esc(p.id)}">Open</button>
-      </div>
-      <p class="muted">DOB: ${esc(p.date_of_birth||"—")} · Phone: ${esc(p.phone||"—")} · Email: ${esc(p.email||"—")}</p>
-    </article>`).join("");
-  target.querySelectorAll(".openPerson").forEach(b=>b.addEventListener("click",()=>viewPerson(b.dataset.id)));
-}
-
-function openModal(title,html){$("modalTitle").textContent=title;$("modalBody").innerHTML=html;$("modal").classList.add("show")}
-function closeModal(){$("modal").classList.remove("show")}
-$("modalClose").addEventListener("click",closeModal);
-$("modal").addEventListener("click",e=>{if(e.target===$("modal"))closeModal()});
-
-function viewPerson(id){
-  const p=people.find(x=>x.id===id); if(!p)return;
-  const tr=tickets.filter(t=>t.person_id===id);
-  openModal("Person Record",`
-    <div class="card"><h2 style="margin-top:0">${esc(nameOf(p))}</h2>
-      <p><b>Reference:</b> ${esc(p.reference||"—")}</p>
-      <p><b>DOB:</b> ${esc(p.date_of_birth||"—")}</p>
-      <p><b>Address:</b> ${esc(p.address||"—")}</p>
-      <p><b>Phone:</b> ${esc(p.phone||"—")}</p>
-      <p><b>Email:</b> ${esc(p.email||"—")}</p>
-    </div>
-    <h3>Tickets (${tr.length})</h3>
-    ${tr.length?tr.map(t=>`<p>${esc(t.ticket_number||"—")} — ${esc(t.registration_plate||"No plate")} — ${esc(t.offence||"—")} — £${Number(t.amount||0).toFixed(2)}</p>`).join(""):"<p class='muted'>No tickets.</p>"}
-    <div class="actions">
-      <button type="button" class="primary" id="lookupPrintBtn">🖨 Print Lookup</button>
-      <button type="button" class="primary" id="issueBtn">Issue Ticket</button>
-    </div>`);
-  $("lookupPrintBtn").addEventListener("click",()=>printPersonLookup(p.id));
-  $("issueBtn").addEventListener("click",()=>issueTicket(p.id));
-}
-
-async function printPersonLookup(personId){
-  const p=people.find(x=>x.id===personId);if(!p)return;
-  const btn=$("lookupPrintBtn");if(btn){btn.disabled=true;btn.textContent="Sending…"}
-  try{
-    const r=await sb.from("ticket_print_queue").insert({ticket_id:null,person_id:personId,job_type:"person_lookup",status:"Queued"});
-    if(r.error)throw r.error;showNotice("✓ Lookup sent to PC printer.");
-  }catch(e){console.error(e);showNotice("Lookup works, but printing is unavailable. The app is still running.","error")}
-  finally{if(btn){btn.disabled=false;btn.textContent="🖨 Print Lookup"}}
-}
-
-function issueTicket(personId){
-  const p=people.find(x=>x.id===personId);if(!p)return;
-  openModal("Issue Training Ticket",`
-    <div class="grid">
-      <div><label>Registration plate</label><input id="t_plate" placeholder="e.g. SC13 ABC"></div>
-      <div><label>Amount</label><input id="t_amount" type="number" step="0.01" value="60"></div>
-      <div class="full"><label>Offence</label><input id="t_offence" value="Training parking offence"></div>
-      <div><label>Contravention code</label><input id="t_code" value="01"></div>
-      <div><label>Location</label><input id="t_location" value="Training location"></div>
-      <div class="full"><label>Notes</label><textarea id="t_notes"></textarea></div>
-    </div>
-    <div class="actions"><button type="button" class="primary" id="saveTicketBtn">Issue & Print</button></div>`);
-  $("saveTicketBtn").addEventListener("click",()=>saveTicket(personId));
-}
-async function saveTicket(personId){
-  const btn=$("saveTicketBtn");
-  btn.disabled=true;
-  btn.textContent="Issuing…";
-
-  const ticketNumber="VIBE"+Date.now().toString().slice(-8);
-  const ticket={
-    ticket_number:ticketNumber,
-    person_id:personId,
-    registration_plate:$("t_plate").value.trim(),
-    offence:$("t_offence").value.trim(),
-    offence_code:$("t_code").value.trim(),
-    location:$("t_location").value.trim(),
-    notes:$("t_notes").value.trim(),
-    amount:Number($("t_amount").value)||0,
-    status:"Issued",
-    issued_at:new Date().toISOString()
-  };
-
-  // Only include officer_id when an officer is actually selected.
-  if(currentOfficer?.id) ticket.officer_id=currentOfficer.id;
-
-  try{
-    let r=await sb.from("tickets").insert(ticket).select().single();
-
-    if(r.error){
-      // Some installations use a different status constraint. Retry without
-      // status so the database default can supply the valid status.
-      const retry={...ticket};
-      delete retry.status;
-      r=await sb.from("tickets").insert(retry).select().single();
-    }
-
-    if(r.error){
-      console.error("Ticket insert failed:",r.error);
-      showNotice("Ticket could not be issued: "+r.error.message,"error");
-      btn.disabled=false;
-      btn.textContent="Issue & Print";
-      return;
-    }
-
-    // The database trigger normally queues printing. If the trigger isn't
-    // installed, add the print job here as a fallback.
-    const q=await sb.from("ticket_print_queue").insert({
-      ticket_id:r.data.id,
-      person_id:personId,
-      job_type:"ticket",
-      status:"Queued"
-    });
-
-    if(q.error && !/duplicate|unique/i.test(q.error.message||"")){
-      console.warn("Ticket created but print queue insert failed:",q.error);
-      showNotice("Ticket issued, but printing was not queued: "+q.error.message,"error");
-    }else{
-      showNotice("✓ Ticket issued and sent to the printer.");
-    }
-
-    closeModal();
-    tickets.unshift(r.data);
-
-  }catch(e){
-    console.error("Ticket issue exception:",e);
-    showNotice("Ticket could not be issued: "+(e.message||e),"error");
-    btn.disabled=false;
-    btn.textContent="Issue & Print";
-  }
-}
-
-function renderTickets(){
-  $("app").innerHTML=`<div class="card"><h1 style="margin:0 0 5px">My Tickets</h1><p class="muted">Training tickets issued through this app.</p>
-  <div style="overflow:auto"><table><thead><tr><th>Number</th><th>Person</th><th>Plate</th><th>Offence</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-  ${tickets.map(t=>`<tr><td>${esc(t.ticket_number||"—")}</td><td>${esc(nameOf(people.find(p=>p.id===t.person_id)))}</td><td>${esc(t.registration_plate||"—")}</td><td>${esc(t.offence||"—")}</td><td>£${Number(t.amount||0).toFixed(2)}</td><td>${esc(t.status||"—")}</td></tr>`).join("")||"<tr><td colspan='6' class='empty'>No tickets.</td></tr>"}
-  </tbody></table></div></div>`;
-}
-function renderDashboard(){
-  $("app").innerHTML=`<div class="card"><h1 style="margin-top:0">Officer Dashboard</h1>
-  <div class="grid"><div class="card"><span class="muted">People</span><h2>${people.length}</h2></div>
-  <div class="card"><span class="muted">Tickets</span><h2>${tickets.length}</h2></div>
-  <div class="card"><span class="muted">Officers</span><h2>${officers.length}</h2></div>
-  <div class="card"><span class="muted">Cases</span><h2>${cases.length}</h2></div></div></div>
-  <div class="card"><label>Officer</label><select id="officerSelect"><option value="">Not selected</option>${officers.map(o=>`<option value="${esc(o.id)}">${esc((o.collar_number||"Officer")+" — "+nameOf(o))}</option>`).join("")}</select></div>`;
-  $("officerSelect").addEventListener("change",e=>{currentOfficer=officers.find(o=>o.id===e.target.value)||null;updateOfficerLabel()});
-}
-function addPerson(){
-  openModal("Add Person",`<div class="grid">
-  <div><label>Reference</label><input id="p_ref" value="PER-${Math.floor(100000+Math.random()*900000)}"></div>
-  <div><label>First name</label><input id="p_first"></div>
-  <div><label>Middle name</label><input id="p_middle"></div>
-  <div><label>Last name</label><input id="p_last"></div>
-  <div><label>Date of birth</label><input id="p_dob" type="date"></div>
-  <div><label>Gender</label><input id="p_gender"></div>
-  <div class="full"><label>Address</label><input id="p_address"></div>
-  <div><label>Phone</label><input id="p_phone"></div><div><label>Email</label><input id="p_email"></div>
-  <div class="full"><label>Notes</label><textarea id="p_notes"></textarea></div></div>
-  <div class="actions"><button type="button" class="primary" id="savePersonBtn">Save Person</button></div>`);
-  $("savePersonBtn").addEventListener("click",savePerson);
-}
-async function savePerson(){
-  const r=await sb.from("persons").insert({
-    reference:$("p_ref").value.trim(),first_name:$("p_first").value.trim(),middle_name:$("p_middle").value.trim(),
-    last_name:$("p_last").value.trim(),date_of_birth:$("p_dob").value||null,gender:$("p_gender").value.trim(),
-    address:$("p_address").value.trim(),phone:$("p_phone").value.trim(),email:$("p_email").value.trim(),notes:$("p_notes").value.trim()
-  }).select().single();
-  if(r.error){showNotice("Could not add person: "+r.error.message,"error");return}
-  people.push(r.data);people.sort((a,b)=>String(a.last_name||"").localeCompare(String(b.last_name||"")));closeModal();renderLookup();showNotice("✓ Person added.");
-}
-
-$("navLookup").addEventListener("click",renderLookup);
-$("navTickets").addEventListener("click",renderTickets);
-$("navDashboard").addEventListener("click",renderDashboard);
-$("navScanner").addEventListener("click",renderSimScanner);
-$("refreshPeople").addEventListener("click",async()=>{await loadPeople();renderLookup();showNotice("People refreshed.");});
-
-load();
-
-function renderSimScanner(){
- $("app").innerHTML=`<div class="card"><h1 style="margin:0 0 5px">SIM ID Scanner</h1>
- <p class="muted">Use the camera to scan a Vibe-Holdings simulation ID. The QR contains only a random token.</p>
- <div id="simReader" style="max-width:520px;margin:15px auto"></div>
- <div class="actions"><button type="button" class="primary" id="simStart">Start Camera</button><button type="button" id="simStop">Stop Camera</button></div>
- <label>Manual token fallback</label><input id="simToken" placeholder="VH-SIM-...">
- <div class="actions"><button type="button" class="primary" id="simLookup">Look Up</button></div>
- <div id="simResult"></div></div>`;
- $("simStart").onclick=startSimScanner;$("simStop").onclick=stopSimScanner;$("simLookup").onclick=lookupSimToken;
-}
-let simScannerInstance=null;
-async function startSimScanner(){
- if(typeof Html5Qrcode==="undefined"){showNotice("Scanner library could not load.","error");return}
- try{
-  await stopSimScanner();simScannerInstance=new Html5Qrcode("simReader");
-  await simScannerInstance.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},
-   async text=>{$("simToken").value=text;await lookupSimToken();await stopSimScanner()},()=>{});
- }catch(e){showNotice("Camera could not start. Use HTTPS/localhost and allow camera access.","error");console.error(e)}
-}
-async function stopSimScanner(){if(simScannerInstance){try{await simScannerInstance.stop()}catch(e){}try{simScannerInstance.clear()}catch(e){}simScannerInstance=null}}
-async function lookupSimToken(){
- const token=($("simToken")?.value||"").trim(),box=$("simResult");if(!token){box.innerHTML="<div class='notice error'>Scan or enter a SIM ID token.</div>";return}
- try{
-  const r=await sb.from("sim_ids").select("id,token,status,issued_at,expires_at,person_id,persons(*)").eq("token",token).maybeSingle();
-  if(r.error)throw r.error;if(!r.data){box.innerHTML="<div class='notice error'><b>ID NOT FOUND</b></div>";return}
-  const x=r.data,p=x.persons,expired=x.expires_at&&new Date(x.expires_at)<new Date();
-  if(x.status!=="Active"||expired){box.innerHTML="<div class='notice error'><b>ID INVALID / REVOKED</b></div>";return}
-  box.innerHTML=`<div class="card"><div class="badge">SIMULATION — NOT A GOVERNMENT ID</div><h2>${esc(nameOf(p))}</h2>
-  <p><b>Reference:</b> ${esc(p?.reference||"—")}</p><p><b>DOB:</b> ${esc(p?.date_of_birth||"—")}</p>
-  <p><b>Address:</b> ${esc(p?.address||"—")}</p><p><b>Phone:</b> ${esc(p?.phone||"—")}</p>
-  <p><b>Email:</b> ${esc(p?.email||"—")}</p><p><b>SIM ID:</b> ${esc(x.token)}</p><p><b>Status:</b> ACTIVE</p></div>`;
-  sb.from("sim_id_scans").insert({sim_id:x.id,scanned_at:new Date().toISOString()}).then(()=>{}).catch(()=>{});
- }catch(e){console.error(e);box.innerHTML="<div class='notice error'>SIM ID lookup failed. People Lookup is still available.</div>"}
-}
-
-</script>
-</body>
-</html>
+</script><script>
+$("who").textContent=officer?nameOf(officer):"Officer";
+async function people(){let r=await sb.from("persons").select("*").order("last_name");$("area").innerHTML="<div class=card><h2>People Lookup</h2><input id=q placeholder='Search name or reference...' oninput='filter()'><div id=list></div></div>";window.peopleData=r.data||[];filter()}
+function filter(){let q=($("q")?.value||"").toLowerCase();$("list").innerHTML=peopleData.filter(p=>(nameOf(p)+" "+(p.reference||"")).toLowerCase().includes(q)).map(p=>"<div class=card><b>"+esc(nameOf(p))+"</b><br><span class=muted>"+esc(p.reference||"")+"</span><br><button class='secondary' onclick='openPerson(""+p.id+"")'>Open</button></div>").join("")}
+async function openPerson(id){let p=peopleData.find(x=>x.id===id);if(p.locked){$("area").innerHTML="<div class=card><h2>Profile Locked</h2><p>This profile requires a data request.</p><button class=primary onclick='request(""+id+"")'>Submit Data Request</button></div>";return}$("area").innerHTML="<div class=card><h2>"+esc(nameOf(p))+"</h2><p>Reference: "+esc(p.reference||"—")+"</p><p>DOB: "+esc(p.date_of_birth||"—")+"</p><p>Address: "+esc(p.address||"—")+"</p></div>"}
+async function request(id){let p=peopleData.find(x=>x.id===id),rid="DR-"+Date.now().toString().slice(-8);$("area").innerHTML="<div class=card><h2>Data Request</h2><label>Officer</label><input readonly value='"+esc(nameOf(officer))+"'><label>Person</label><input readonly value='"+esc(nameOf(p))+"'><label>Person Reference</label><input readonly value='"+esc(p.reference||"")+"'><label>Request ID</label><input readonly value='"+rid+"'><label>Why are you requesting this data?</label><textarea id=reason></textarea><button class=primary onclick='submitRequest(""+id+"",""+rid+"")'>Submit Data Request</button></div>"}
+async function submitRequest(pid,rid){let reason=$("reason").value.trim();if(!reason)return alert("Enter a reason.");let r=await sb.from("data_requests").insert({request_number:rid,officer_id:officer?.id||null,person_id:pid,reason,status:"Pending",requested_at:new Date().toISOString()}).select().single();if(r.error)return alert(r.error.message);try{await sb.from("ticket_print_queue").insert({ticket_id:null,person_id:pid,job_type:"data_request",status:"Queued",data_request_id:r.data.id})}catch(e){}setTimeout(()=>sb.from("data_requests").update({status:"Approved",approved_at:new Date().toISOString()}).eq("id",r.data.id),50000);$("area").innerHTML="<div class=card><b>Data Form submitted.</b><p>Status: Pending. It will automatically approve in 50 seconds.</p></div>"}
+async function scanner(){$("area").innerHTML="<div class=card><h2>SIM ID Scanner</h2><div id=reader></div><button class=primary onclick='startScan()'>Start Camera</button><input id=token placeholder='VH-SIM-...'><button class=secondary onclick='lookupToken()'>Look Up</button><div id=result></div></div>"}
+let sc=null;async function startScan(){try{sc=new Html5Qrcode("reader");await sc.start({facingMode:"environment"},{fps:10,qrbox:250},async t=>{$("token").value=t;await lookupToken();sc.stop()},()=>{})}catch(e){$("result").innerHTML="<p>Camera unavailable. Use HTTPS and allow camera access.</p>"}}
+async function lookupToken(){let r=await sb.from("sim_ids").select("*,persons(*)").eq("token",$("token").value.trim()).maybeSingle();$("result").innerHTML=r.error?esc(r.error.message):!r.data?"ID not found":"<div class=card><b>"+esc(nameOf(r.data.persons))+"</b><p>Reference: "+esc(r.data.persons?.reference||"—")+"</p><p>Status: "+esc(r.data.status)+"</p></div>"}
+function tickets(){$("area").innerHTML="<div class=card><h2>Tickets</h2><p class=muted>Ticket creation and printing use the PC printer service.</p></div>"}
+function cases(){$("area").innerHTML="<div class=card><h2>Cases</h2><p class=muted>Open and manage cases from the Police System.</p></div>"}
+async function requests(){let r=await sb.from("data_requests").select("*").order("requested_at",{ascending:false});$("area").innerHTML="<div class=card><h2>Requests</h2>"+(r.data||[]).map(x=>"<p><b>"+esc(x.request_number)+"</b> — "+esc(x.status)+"<br><span class=muted>"+esc(x.reason)+"</span></p>").join("")+"</div>"}
+function evidence(){$("area").innerHTML="<div class=card><h2>Evidence</h2><input type=file accept='image/*' capture='environment' multiple></div>"}
+function statements(){$("area").innerHTML="<div class=card><h2>Statements</h2><textarea placeholder='Type statement...'></textarea><label>Officer e-signature</label><input><button class=primary>Save Statement</button></div>"}
+</script></body></html>
