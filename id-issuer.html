@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID Issuer — Vibe-Holdings</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef2f6;color:#17212b;font-family:Arial,sans-serif}
+header{background:#102a43;color:#fff;padding:15px 20px;font-weight:800}header small{display:block;font-size:10px;color:#cbd5df;margin-top:3px}
+main{max-width:900px;margin:auto;padding:18px}.card{background:#fff;border:1px solid #dbe2e8;border-radius:10px;padding:18px;margin-bottom:15px}
+label{display:block;font-size:11px;font-weight:800;margin:10px 0 5px}input,select{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:7px;font:inherit}
+button{border:0;border-radius:7px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e5edf3;color:#173047}
+.person{border:1px solid #dbe2e8;border-radius:9px;padding:12px;margin-top:7px;cursor:pointer}.person:hover{background:#f7fafc}.muted{font-size:12px;color:#687585}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+#preview{width:340px;max-width:100%;border:2px solid #111;border-radius:14px;padding:18px;background:#fff;margin-top:18px}
+.qr{display:flex;justify-content:center;margin:14px 0}.warning{font-size:10px;font-weight:900;letter-spacing:.07em}
+@media print{body{background:#fff}header,main>.card:not(#printCard),#printCard .no-print{display:none!important}#printCard{display:block!important;margin:0;border:2px solid #111;width:80mm;box-shadow:none}}
+</style>
+</head>
+<body>
+<header>Vibe-Holdings ID Issuer<small>SIMULATION — NOT A GOVERNMENT / DVLA SERVICE</small></header>
+<main>
+<div class="card">
+<h2>Issue ID</h2>
+<p class="muted">Type the person's name and select the existing database record.</p>
+<label>Person name</label><input id="search" placeholder="Start typing a name..." autocomplete="off">
+<div id="matches"></div>
+<div id="selected"></div>
+<div id="details" style="display:none">
+<label>Issue date</label><input id="issued" type="date">
+<label>Expiry date</label><input id="expires" type="date">
+<label>Status</label><select id="status"><option>Active</option><option>Suspended</option></select>
+<div class="actions"><button class="primary" onclick="issue()">Issue ID</button></div>
+</div>
+</div>
+<div id="printCard" class="card" style="display:none">
+<div class="no-print"><h2>Printable ID</h2></div>
+<div id="preview"></div>
+<div class="actions no-print"><button class="primary" onclick="window.print()">Print ID</button></div>
+</div>
+</main>
+<script>
+const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let people=[],selected=null;
+function nameOf(p){return [p.first_name,p.middle_name,p.last_name].filter(Boolean).join(" ")||"Unnamed"}
+async function load(){const r=await sb.from("persons").select("*").order("last_name");if(r.error){$("matches").innerHTML="<div class=muted>"+esc(r.error.message)+"</div>";return}people=r.data||[]}
+$("search").oninput=()=>{let q=$("search").value.toLowerCase().trim();if(q.length<2){$("matches").innerHTML="";return}let m=people.filter(p=>(nameOf(p)+" "+(p.reference||"")).toLowerCase().includes(q)).slice(0,10);$("matches").innerHTML=m.map(p=>`<div class=person onclick="selectPerson('${esc(p.id)}')"><b>${esc(nameOf(p))}</b><br><span class=muted>${esc(p.reference||"")}</span></div>`).join("")||"<div class=muted>No matching person.</div>"}
+function selectPerson(id){selected=people.find(p=>p.id===id);if(!selected)return;$("selected").innerHTML=`<div class=card><b>Selected:</b> ${esc(nameOf(selected))}<br><span class=muted>${esc(selected.reference||"")}</span></div>`;$("matches").innerHTML="";$("search").value=nameOf(selected);$("details").style.display="block"}
+$("issued").value=new Date().toISOString().slice(0,10);
+async function issue(){
+ if(!selected){alert("Select a person.");return}
+ const token="VH-SIM-"+crypto.randomUUID().replaceAll("-","").toUpperCase();
+ const r=await sb.from("sim_ids").insert({person_id:selected.id,token,status:$("status").value,issued_at:new Date($("issued").value+"T00:00:00").toISOString(),expires_at:$("expires").value?new Date($("expires").value+"T23:59:59").toISOString():null}).select().single();
+ if(r.error){alert("Could not issue ID: "+r.error.message);return}
+ const id=r.data;
+ $("preview").innerHTML=`<div class=warning>VIBE-HOLDINGS</div><h2>${esc(nameOf(selected))}</h2><p><b>SIM ID</b><br>${esc(token)}</p><p><b>Reference:</b> ${esc(selected.reference||"—")}</p><p><b>Issued:</b> ${esc(id.issued_at)}</p><p><b>Expires:</b> ${esc(id.expires_at||"—")}</p><div id=qr class=qr></div><div class=warning>SIMULATION — NOT A GOVERNMENT ID</div>`;
+ $("printCard").style.display="block";
+ new QRCode($("qr"),{text:token,width:180,height:180});
+ window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+load();
+</script>
+</body>
+</html>
