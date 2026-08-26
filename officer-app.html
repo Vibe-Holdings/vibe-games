@@ -1,208 +1,333 @@
 <!doctype html>
 <html lang="en">
-<head><script>(function(){try{if(!sessionStorage.getItem("police_session"))window.location.replace("/");}catch(e){window.location.replace("/");}})();</script>
+<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Officer App — Vibe-Holdings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#eef2f6;color:#17212b;font-family:Arial,sans-serif}
-header{background:#102a43;color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
-.brand{font-weight:800}.brand small{display:block;font-size:10px;color:#c8d5df;margin-top:3px}
-main{max-width:1100px;margin:auto;padding:18px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
-button{border:0;border-radius:7px;padding:10px 13px;font-weight:700;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e5edf3;color:#173047}.danger{background:#fee2e2;color:#991b1b}
-.card{background:#fff;border:1px solid #dbe2e8;border-radius:10px;padding:18px;margin-bottom:15px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.full{grid-column:1/-1}label{font-size:11px;font-weight:800;display:block;margin-bottom:5px}
-input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:7px;font:inherit;background:#fff}textarea{min-height:120px}
-.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.muted{font-size:12px;color:#687585}
-.person{border:1px solid #dbe2e8;border-radius:9px;padding:13px;margin-top:9px}.person:hover{background:#f7fafc}
-.badge{display:inline-block;padding:3px 7px;border-radius:12px;font-size:10px;font-weight:800;background:#dcfce7;color:#166534}
-table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #e5e9ed;font-size:12px;vertical-align:top}th{background:#f5f7f9}
-.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal.show{display:flex}.modalbox{background:#fff;width:min(720px,100%);max-height:90vh;overflow:auto;border-radius:12px;padding:20px}
-@media(max-width:700px){.grid{grid-template-columns:1fr}main{padding:10px}}
+:root{--nav:#102a43;--nav2:#173f5f;--bg:#eef2f6;--card:#fff;--border:#d7dee6;--text:#17212b;--muted:#657486;--danger:#991b1b;--ok:#166534}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+body{font-size:15px}
+button,input,select,textarea{font:inherit}
+button{min-height:44px;border:1px solid var(--border);border-radius:10px;padding:0 14px;font-weight:700;cursor:pointer;background:#fff;color:var(--text)}
+button.primary{background:var(--nav2);border-color:var(--nav2);color:#fff}
+button.danger{background:#fee2e2;border-color:#fecaca;color:var(--danger)}
+button:disabled{opacity:.55;cursor:not-allowed}
+input,select,textarea{width:100%;min-height:44px;border:1px solid #cbd5df;border-radius:10px;padding:10px 12px;background:#fff;color:var(--text)}
+textarea{min-height:110px;resize:vertical}
+header{background:var(--nav);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:10}
+.brand{font-weight:800;font-size:19px}.brand small{display:block;color:#c9d5df;font-size:11px;font-weight:500;margin-top:3px}
+main{max-width:1100px;margin:auto;padding:14px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.full{grid-column:1/-1}
+label{display:block;font-size:12px;font-weight:800;margin:0 0 5px}
+.muted{color:var(--muted);font-size:13px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.person{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:9px}
+.person-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.badge{display:inline-block;background:#e8eef5;color:#173f5f;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:800}
+.notice{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:600}
+.notice.error{background:#fee2e2;color:var(--danger);border:1px solid #fecaca}
+.notice.ok{background:#dcfce7;color:var(--ok);border:1px solid #bbf7d0}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}
+.modal.show{display:flex}.modalbox{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:18px}
+.modalhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top}
+th{background:#f5f7f9;font-weight:800}tr:last-child td{border-bottom:0}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.person-top{align-items:flex-start;flex-direction:column}main{padding:10px}header{padding:13px}.brand{font-size:17px}}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">Officer App<small>People Lookup • Tickets • Case Information</small></div>
+  <div class="brand">Officer App<small>Vibe-Holdings • Training / Simulation System</small></div>
   <div id="officerLabel">Not signed in</div>
 </header>
 <main>
-  <div class="tabs">
-    <button class="primary" onclick="show('lookup')">People Lookup</button>
-    <button class="secondary" onclick="show('tickets')">My Tickets</button>
-    <button class="secondary" onclick="show('dashboard')">Dashboard</button>
-    <button class="secondary" onclick="show('scanner')">SIM ID Scanner</button>
-  </div>
-  <div id="app">Loading…</div>
+  <div id="notice"></div>
+  <nav class="tabs" aria-label="Main navigation">
+    <button type="button" class="primary" id="navLookup">People Lookup</button>
+    <button type="button" id="navTickets">My Tickets</button>
+    <button type="button" id="navDashboard">Dashboard</button>
+    <button type="button" id="navScanner">SIM ID Scanner</button>
+    <button type="button" id="refreshPeople">↻ Refresh People</button>
+  </nav>
+  <section id="app">Loading…</section>
 </main>
-<div id="modal" class="modal"><div class="modalbox"><div style="display:flex;justify-content:space-between"><h2 id="mt">Record</h2><button class="secondary" onclick="closeModal()">Close</button></div><div id="mb"></div></div></div>
+
+<div id="modal" class="modal" role="dialog" aria-modal="true">
+  <div class="modalbox">
+    <div class="modalhead"><h2 id="modalTitle">Record</h2><button type="button" id="modalClose">Close</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let people=[],officers=[],tickets=[],cases=[],currentOfficer=null;
 
-const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const val=id=>document.getElementById(id)?.value.trim()||"";
-const officerName=id=>{let o=officers.find(x=>x.id===id);return o?o.first_name+" "+o.last_name:"—"};
-const personName=id=>{let p=people.find(x=>x.id===id);return p?p.first_name+" "+p.last_name:"—"};
+let people=[],tickets=[],officers=[],cases=[],currentOfficer=null;
 
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nameOf=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Unnamed";
+const showNotice=(msg,type="ok")=>{$("notice").innerHTML=`<div class="notice ${type}">${esc(msg)}</div>`;clearTimeout(window.noticeTimer);window.noticeTimer=setTimeout(()=>{$("notice").innerHTML=""},5000)};
+
+async function loadPeople(){
+  const r=await sb.from("persons").select("*").order("last_name",{ascending:true});
+  if(r.error){people=[];showNotice("People database error: "+r.error.message,"error");return false}
+  people=r.data||[];
+  return true;
+}
+async function loadOtherData(){
+  try{const r=await sb.from("tickets").select("*").order("issued_at",{ascending:false});tickets=r.error?[]:(r.data||[])}catch(e){tickets=[]}
+  try{const r=await sb.from("officers").select("*");officers=r.error?[]:(r.data||[])}catch(e){officers=[]}
+  try{const r=await sb.from("cases").select("*").order("created_at",{ascending:false});cases=r.error?[]:(r.data||[])}catch(e){cases=[]}
+}
 async function load(){
-  const [p,o,t,c]=await Promise.all([
-    sb.from("persons").select("*").order("last_name"),
-    sb.from("officers").select("*").order("last_name"),
-    sb.from("tickets").select("*").order("issued_at",{ascending:false}),
-    sb.from("cases").select("*").order("created_at",{ascending:false})
-  ]);
-  for(const r of [p,o,t,c])if(r.error)throw r.error;
-  people=p.data||[];officers=o.data||[];tickets=t.data||[];cases=c.data||[];
-  if(!currentOfficer&&officers.length) currentOfficer=officers[0];
-  document.getElementById("officerLabel").textContent=currentOfficer?currentOfficer.collar_number+" — "+currentOfficer.first_name+" "+currentOfficer.last_name:"No officer selected";
+  await loadPeople();
+  await loadOtherData();
+  updateOfficerLabel();
+  renderLookup();
+}
+function updateOfficerLabel(){
+  $("officerLabel").textContent=currentOfficer?`${currentOfficer.collar_number||"Officer"} — ${nameOf(currentOfficer)}`:"Not signed in";
 }
 
-function show(page){
-  if(page==="lookup")lookup();
-  if(page==="tickets")ticketList();
-  if(page==="dashboard")dashboard();
-  if(page==="scanner")simScanner();
+function renderLookup(){
+  $("app").innerHTML=`
+  <div class="card">
+    <h1 style="margin:0 0 5px">People Lookup</h1>
+    <p class="muted">Search the training people database by name, reference, phone or email.</p>
+    <input id="peopleSearch" placeholder="Search people…" autocomplete="off">
+    <div class="actions"><button type="button" class="primary" id="addPersonBtn">+ Add Person</button></div>
+  </div>
+  <div id="peopleResults"></div>`;
+  $("peopleSearch").addEventListener("input",renderResults);
+  $("addPersonBtn").addEventListener("click",addPerson);
+  renderResults();
 }
-function lookup(){
- document.getElementById("app").innerHTML=`
- <div class="card"><h1>People Lookup</h1><p class="muted">Search the people register by name, reference, phone or email.</p>
- <input id="q" placeholder="Search person..." oninput="runLookup()"></div>
- <div id="results"></div>`;
- runLookup();
+function renderResults(){
+  const q=($("peopleSearch")?.value||"").trim().toLowerCase();
+  const found=people.filter(p=>`${p.reference||""} ${p.first_name||""} ${p.middle_name||""} ${p.last_name||""} ${p.phone||""} ${p.email||""}`.toLowerCase().includes(q)).slice(0,100);
+  const target=$("peopleResults");
+  if(!target)return;
+  if(!found.length){target.innerHTML=`<div class="card empty">${people.length?"No matching people.":"No people are currently loaded."}</div>`;return}
+  target.innerHTML=found.map(p=>`
+    <article class="person">
+      <div class="person-top">
+        <div><strong>${esc(nameOf(p))}</strong><br><span class="badge">${esc(p.reference||"No reference")}</span></div>
+        <button type="button" class="primary openPerson" data-id="${esc(p.id)}">Open</button>
+      </div>
+      <p class="muted">DOB: ${esc(p.date_of_birth||"—")} · Phone: ${esc(p.phone||"—")} · Email: ${esc(p.email||"—")}</p>
+    </article>`).join("");
+  target.querySelectorAll(".openPerson").forEach(b=>b.addEventListener("click",()=>viewPerson(b.dataset.id)));
 }
-function runLookup(){
- const q=(document.getElementById("q")?.value||"").toLowerCase();
- const found=people.filter(p=>(p.reference+" "+p.first_name+" "+p.last_name+" "+p.phone+" "+p.email).toLowerCase().includes(q)).slice(0,50);
- document.getElementById("results").innerHTML=found.length?found.map(p=>`
- <div class="person"><div style="display:flex;justify-content:space-between"><div><b>${esc(p.first_name+" "+p.last_name)}</b><br><span class="muted">${esc(p.reference)}</span></div><button class="primary" onclick="viewPerson('${p.id}')">Open</button></div>
- <p class="muted">DOB: ${esc(p.date_of_birth||"—")} • Phone: ${esc(p.phone||"—")} • Email: ${esc(p.email||"—")}</p></div>`).join(""):"<div class='card'>No matching people.</div>";
+
+function openModal(title,html){$("modalTitle").textContent=title;$("modalBody").innerHTML=html;$("modal").classList.add("show")}
+function closeModal(){$("modal").classList.remove("show")}
+$("modalClose").addEventListener("click",closeModal);
+$("modal").addEventListener("click",e=>{if(e.target===$("modal"))closeModal()});
+
+function viewPerson(id){
+  const p=people.find(x=>x.id===id); if(!p)return;
+  const tr=tickets.filter(t=>t.person_id===id);
+  openModal("Person Record",`
+    <div class="card"><h2 style="margin-top:0">${esc(nameOf(p))}</h2>
+      <p><b>Reference:</b> ${esc(p.reference||"—")}</p>
+      <p><b>DOB:</b> ${esc(p.date_of_birth||"—")}</p>
+      <p><b>Address:</b> ${esc(p.address||"—")}</p>
+      <p><b>Phone:</b> ${esc(p.phone||"—")}</p>
+      <p><b>Email:</b> ${esc(p.email||"—")}</p>
+    </div>
+    <h3>Tickets (${tr.length})</h3>
+    ${tr.length?tr.map(t=>`<p>${esc(t.ticket_number||"—")} — ${esc(t.registration_plate||"No plate")} — ${esc(t.offence||"—")} — £${Number(t.amount||0).toFixed(2)}</p>`).join(""):"<p class='muted'>No tickets.</p>"}
+    <div class="actions">
+      <button type="button" class="primary" id="lookupPrintBtn">🖨 Print Lookup</button>
+      <button type="button" class="primary" id="issueBtn">Issue Ticket</button>
+    </div>`);
+  $("lookupPrintBtn").addEventListener("click",()=>printPersonLookup(p.id));
+  $("issueBtn").addEventListener("click",()=>issueTicket(p.id));
 }
-async function viewPerson(id){
- const p=people.find(x=>x.id===id);
- const tr=tickets.filter(x=>x.person_id===id);
- const cr=cases.filter(c=>false);
- openModal("Person Record",`
- <h2>${esc(p.first_name+" "+p.last_name)}</h2>
- <p><b>Reference:</b> ${esc(p.reference)}</p>
- <p><b>DOB:</b> ${esc(p.date_of_birth||"—")}</p>
- <p><b>Address:</b> ${esc(p.address||"—")}</p>
- <p><b>Phone:</b> ${esc(p.phone||"—")}</p>
- <p><b>Email:</b> ${esc(p.email||"—")}</p>
- <hr><h3>Tickets (${tr.length})</h3>
- ${tr.map(t=>`<p><b>${esc(t.ticket_number)}</b> — ${esc(t.offence)} — £${Number(t.amount).toFixed(2)} — ${esc(t.status)}</p>`).join("")||"<p>No tickets.</p>"}
- <div class="actions"><button class="primary" onclick="issueTicket('${id}')">Issue Ticket</button><button class="secondary" onclick="printPerson('${id}')">Print Lookup</button></div>`);
+
+async function printPersonLookup(personId){
+  const p=people.find(x=>x.id===personId);if(!p)return;
+  const btn=$("lookupPrintBtn");if(btn){btn.disabled=true;btn.textContent="Sending…"}
+  try{
+    const r=await sb.from("ticket_print_queue").insert({ticket_id:null,person_id:personId,job_type:"person_lookup",status:"Queued"});
+    if(r.error)throw r.error;showNotice("✓ Lookup sent to PC printer.");
+  }catch(e){console.error(e);showNotice("Lookup works, but printing is unavailable. The app is still running.","error")}
+  finally{if(btn){btn.disabled=false;btn.textContent="🖨 Print Lookup"}}
 }
-function ticketList(){
- const mine=currentOfficer?tickets.filter(t=>t.officer_id===currentOfficer.id):tickets;
- document.getElementById("app").innerHTML=`
- <div class="card"><h1>Tickets</h1><p class="muted">Tickets issued by the selected officer.</p>
- <div style="overflow:auto"><table><tr><th>Number</th><th>Person</th><th>Offence</th><th>Amount</th><th>Issued</th><th>Status</th></tr>
- ${mine.map(t=>`<tr><td>${esc(t.ticket_number)}</td><td>${esc(personName(t.person_id))}</td><td>${esc(t.offence)}</td><td>£${Number(t.amount).toFixed(2)}</td><td>${esc(t.issued_at)}</td><td>${esc(t.status)}</td></tr>`).join("")||"<tr><td colspan=6>No tickets.</td></tr>"}</table></div></div>`;
-}
-function dashboard(){
- document.getElementById("app").innerHTML=`
- <div class="card"><h1>Officer Dashboard</h1><p>Officer: <b>${esc(currentOfficer?currentOfficer.first_name+" "+currentOfficer.last_name:"Not selected")}</b></p>
- <div class="grid">
- <div class="card"><b>People</b><h2>${people.length}</h2></div>
- <div class="card"><b>My tickets</b><h2>${currentOfficer?tickets.filter(t=>t.officer_id===currentOfficer.id).length:0}</h2></div>
- </div></div>
- <div class="card"><h2>Select Officer</h2><select id="officerSelect" onchange="selectOfficer(this.value)">${officers.map(o=>`<option value="${o.id}" ${currentOfficer&&o.id===currentOfficer.id?"selected":""}>${esc(o.collar_number+" — "+o.first_name+" "+o.last_name)}</option>`).join("")}</select></div>`;
-}
-function selectOfficer(id){currentOfficer=officers.find(o=>o.id===id);document.getElementById("officerLabel").textContent=currentOfficer.collar_number+" — "+currentOfficer.first_name+" "+currentOfficer.last_name;dashboard()}
+
 function issueTicket(personId){
- if(!currentOfficer){alert("Select an officer first.");return}
- openModal("Issue Ticket",`
- <div class="grid">
- <div><label>Ticket Number</label><input id="t_num" value="TKT-${Math.floor(100000+Math.random()*900000)}"></div>
- <div><label>Offence Code</label><input id="t_code" placeholder="e.g. DEMO-01"></div>
- <div class="full"><label>Offence</label><input id="t_offence"></div>
- <div><label>Location</label><input id="t_loc"></div>
- <div><label>Amount (£)</label><input id="t_amount" type="number" min="0" step="0.01"></div>
- <div><label>Due Date</label><input id="t_due" type="datetime-local"></div>
- <div class="full"><label>Notes</label><textarea id="t_notes"></textarea></div>
- </div>
- <div class="actions"><button class="primary" onclick="saveTicket('${personId}')">Issue Ticket</button></div>`);
+  const p=people.find(x=>x.id===personId);if(!p)return;
+  openModal("Issue Training Ticket",`
+    <div class="grid">
+      <div><label>Registration plate</label><input id="t_plate" placeholder="e.g. SC13 ABC"></div>
+      <div><label>Amount</label><input id="t_amount" type="number" step="0.01" value="60"></div>
+      <div class="full"><label>Offence</label><input id="t_offence" value="Training parking offence"></div>
+      <div><label>Contravention code</label><input id="t_code" value="01"></div>
+      <div><label>Location</label><input id="t_location" value="Training location"></div>
+      <div class="full"><label>Notes</label><textarea id="t_notes"></textarea></div>
+    </div>
+    <div class="actions"><button type="button" class="primary" id="saveTicketBtn">Issue & Print</button></div>`);
+  $("saveTicketBtn").addEventListener("click",()=>saveTicket(personId));
 }
 async function saveTicket(personId){
- const ticket={ticket_number:val("t_num"),person_id:personId,officer_id:currentOfficer.id,offence_code:val("t_code"),offence:val("t_offence"),location:val("t_loc"),amount:Number(val("t_amount")||0),due_at:val("t_due")||null,notes:val("t_notes"),status:"Issued"};
- const r=await sb.from("tickets").insert(ticket).select().single();
- if(r.error){alert(r.error.message);return}
- await sb.from("ticket_print_queue").insert({ticket_id:r.data.id,status:"Queued"});
- await sb.from("officer_activity").insert({officer_id:currentOfficer.id,activity_type:"Ticket Issued",details:{ticket_id:r.data.id,ticket_number:r.data.ticket_number}});
- closeModal();await load();ticketList();
-}
-function printPerson(id){
- const p=people.find(x=>x.id===id);const tr=tickets.filter(x=>x.person_id===id);
- const w=window.open("","_blank","width=500,height=800");if(!w){alert("Allow pop-ups.");return}
- w.document.write(`<html><head><title>Person Lookup</title><style>@page{size:80mm auto;margin:0}body{width:72mm;margin:auto;font:10pt Arial;color:#000}h1{text-align:center;font-size:14pt}h2{font-size:11pt;border-bottom:1px solid #000}</style></head><body><h1>OFFICER LOOKUP</h1><p><b>${esc(p.first_name+" "+p.last_name)}</b><br>Ref: ${esc(p.reference)}<br>DOB: ${esc(p.date_of_birth||"—")}<br>Address: ${esc(p.address||"—")}<br>Phone: ${esc(p.phone||"—")}</p><h2>Tickets</h2>${tr.map(t=>`<p>${esc(t.ticket_number)}<br>${esc(t.offence)}<br>£${Number(t.amount).toFixed(2)}<br>${esc(t.status)}</p>`).join("")||"<p>None</p>"}<script>onload=()=>setTimeout(()=>print(),300)<\/script></body></html>`);w.document.close();
-}
-function openModal(title,body){document.getElementById("mt").textContent=title;document.getElementById("mb").innerHTML=body;document.getElementById("modal").classList.add("show")}
-function closeModal(){document.getElementById("modal").classList.remove("show")}
-(async()=>{try{await load();show("lookup")}catch(e){document.getElementById("app").innerHTML=`<div class="card"><h2>Database error</h2><p>${esc(e.message)}</p><p>Run the officer-app SQL first.</p></div>`}})();
+  const btn=$("saveTicketBtn");
+  btn.disabled=true;
+  btn.textContent="Issuing…";
 
-function simScanner(){
- document.getElementById("app").innerHTML=`
- <div class="card"><h1>SIM ID Scanner</h1>
- <p class="muted">Scan a Vibe-Holdings simulation ID. The QR contains only a random token.</p>
- <div id="simReader" style="max-width:520px;margin:auto"></div>
- <div class="actions">
-  <button class="primary" onclick="startSimScanner()">Start Camera</button>
-  <button class="secondary" onclick="stopSimScanner()">Stop</button>
- </div>
- <label>Manual token fallback</label>
- <input id="simToken" placeholder="VH-SIM-...">
- <div class="actions"><button class="primary" onclick="lookupSimToken()">Look Up</button></div>
- <div id="simResult"></div>
- </div>`;
+  const ticketNumber="VIBE"+Date.now().toString().slice(-8);
+  const ticket={
+    ticket_number:ticketNumber,
+    person_id:personId,
+    registration_plate:$("t_plate").value.trim(),
+    offence:$("t_offence").value.trim(),
+    offence_code:$("t_code").value.trim(),
+    location:$("t_location").value.trim(),
+    notes:$("t_notes").value.trim(),
+    amount:Number($("t_amount").value)||0,
+    status:"Issued",
+    issued_at:new Date().toISOString()
+  };
+
+  // Only include officer_id when an officer is actually selected.
+  if(currentOfficer?.id) ticket.officer_id=currentOfficer.id;
+
+  try{
+    let r=await sb.from("tickets").insert(ticket).select().single();
+
+    if(r.error){
+      // Some installations use a different status constraint. Retry without
+      // status so the database default can supply the valid status.
+      const retry={...ticket};
+      delete retry.status;
+      r=await sb.from("tickets").insert(retry).select().single();
+    }
+
+    if(r.error){
+      console.error("Ticket insert failed:",r.error);
+      showNotice("Ticket could not be issued: "+r.error.message,"error");
+      btn.disabled=false;
+      btn.textContent="Issue & Print";
+      return;
+    }
+
+    // The database trigger normally queues printing. If the trigger isn't
+    // installed, add the print job here as a fallback.
+    const q=await sb.from("ticket_print_queue").insert({
+      ticket_id:r.data.id,
+      person_id:personId,
+      job_type:"ticket",
+      status:"Queued"
+    });
+
+    if(q.error && !/duplicate|unique/i.test(q.error.message||"")){
+      console.warn("Ticket created but print queue insert failed:",q.error);
+      showNotice("Ticket issued, but printing was not queued: "+q.error.message,"error");
+    }else{
+      showNotice("✓ Ticket issued and sent to the printer.");
+    }
+
+    closeModal();
+    tickets.unshift(r.data);
+
+  }catch(e){
+    console.error("Ticket issue exception:",e);
+    showNotice("Ticket could not be issued: "+(e.message||e),"error");
+    btn.disabled=false;
+    btn.textContent="Issue & Print";
+  }
+}
+
+function renderTickets(){
+  $("app").innerHTML=`<div class="card"><h1 style="margin:0 0 5px">My Tickets</h1><p class="muted">Training tickets issued through this app.</p>
+  <div style="overflow:auto"><table><thead><tr><th>Number</th><th>Person</th><th>Plate</th><th>Offence</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+  ${tickets.map(t=>`<tr><td>${esc(t.ticket_number||"—")}</td><td>${esc(nameOf(people.find(p=>p.id===t.person_id)))}</td><td>${esc(t.registration_plate||"—")}</td><td>${esc(t.offence||"—")}</td><td>£${Number(t.amount||0).toFixed(2)}</td><td>${esc(t.status||"—")}</td></tr>`).join("")||"<tr><td colspan='6' class='empty'>No tickets.</td></tr>"}
+  </tbody></table></div></div>`;
+}
+function renderDashboard(){
+  $("app").innerHTML=`<div class="card"><h1 style="margin-top:0">Officer Dashboard</h1>
+  <div class="grid"><div class="card"><span class="muted">People</span><h2>${people.length}</h2></div>
+  <div class="card"><span class="muted">Tickets</span><h2>${tickets.length}</h2></div>
+  <div class="card"><span class="muted">Officers</span><h2>${officers.length}</h2></div>
+  <div class="card"><span class="muted">Cases</span><h2>${cases.length}</h2></div></div></div>
+  <div class="card"><label>Officer</label><select id="officerSelect"><option value="">Not selected</option>${officers.map(o=>`<option value="${esc(o.id)}">${esc((o.collar_number||"Officer")+" — "+nameOf(o))}</option>`).join("")}</select></div>`;
+  $("officerSelect").addEventListener("change",e=>{currentOfficer=officers.find(o=>o.id===e.target.value)||null;updateOfficerLabel()});
+}
+function addPerson(){
+  openModal("Add Person",`<div class="grid">
+  <div><label>Reference</label><input id="p_ref" value="PER-${Math.floor(100000+Math.random()*900000)}"></div>
+  <div><label>First name</label><input id="p_first"></div>
+  <div><label>Middle name</label><input id="p_middle"></div>
+  <div><label>Last name</label><input id="p_last"></div>
+  <div><label>Date of birth</label><input id="p_dob" type="date"></div>
+  <div><label>Gender</label><input id="p_gender"></div>
+  <div class="full"><label>Address</label><input id="p_address"></div>
+  <div><label>Phone</label><input id="p_phone"></div><div><label>Email</label><input id="p_email"></div>
+  <div class="full"><label>Notes</label><textarea id="p_notes"></textarea></div></div>
+  <div class="actions"><button type="button" class="primary" id="savePersonBtn">Save Person</button></div>`);
+  $("savePersonBtn").addEventListener("click",savePerson);
+}
+async function savePerson(){
+  const r=await sb.from("persons").insert({
+    reference:$("p_ref").value.trim(),first_name:$("p_first").value.trim(),middle_name:$("p_middle").value.trim(),
+    last_name:$("p_last").value.trim(),date_of_birth:$("p_dob").value||null,gender:$("p_gender").value.trim(),
+    address:$("p_address").value.trim(),phone:$("p_phone").value.trim(),email:$("p_email").value.trim(),notes:$("p_notes").value.trim()
+  }).select().single();
+  if(r.error){showNotice("Could not add person: "+r.error.message,"error");return}
+  people.push(r.data);people.sort((a,b)=>String(a.last_name||"").localeCompare(String(b.last_name||"")));closeModal();renderLookup();showNotice("✓ Person added.");
+}
+
+$("navLookup").addEventListener("click",renderLookup);
+$("navTickets").addEventListener("click",renderTickets);
+$("navDashboard").addEventListener("click",renderDashboard);
+$("navScanner").addEventListener("click",renderSimScanner);
+$("refreshPeople").addEventListener("click",async()=>{await loadPeople();renderLookup();showNotice("People refreshed.");});
+
+load();
+
+function renderSimScanner(){
+ $("app").innerHTML=`<div class="card"><h1 style="margin:0 0 5px">SIM ID Scanner</h1>
+ <p class="muted">Use the camera to scan a Vibe-Holdings simulation ID. The QR contains only a random token.</p>
+ <div id="simReader" style="max-width:520px;margin:15px auto"></div>
+ <div class="actions"><button type="button" class="primary" id="simStart">Start Camera</button><button type="button" id="simStop">Stop Camera</button></div>
+ <label>Manual token fallback</label><input id="simToken" placeholder="VH-SIM-...">
+ <div class="actions"><button type="button" class="primary" id="simLookup">Look Up</button></div>
+ <div id="simResult"></div></div>`;
+ $("simStart").onclick=startSimScanner;$("simStop").onclick=stopSimScanner;$("simLookup").onclick=lookupSimToken;
 }
 let simScannerInstance=null;
 async function startSimScanner(){
- if(typeof Html5Qrcode==="undefined"){alert("Scanner library could not load.");return}
+ if(typeof Html5Qrcode==="undefined"){showNotice("Scanner library could not load.","error");return}
  try{
-  await stopSimScanner();
-  simScannerInstance=new Html5Qrcode("simReader");
-  await simScannerInstance.start(
-   {facingMode:"environment"},
-   {fps:10,qrbox:{width:250,height:250}},
-   text=>{document.getElementById("simToken").value=text;lookupSimToken();stopSimScanner()},
-   ()=>{}
-  );
- }catch(e){
-  alert("Camera could not start: "+e.message+". Camera access requires HTTPS/localhost and camera permission.");
- }
+  await stopSimScanner();simScannerInstance=new Html5Qrcode("simReader");
+  await simScannerInstance.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},
+   async text=>{$("simToken").value=text;await lookupSimToken();await stopSimScanner()},()=>{});
+ }catch(e){showNotice("Camera could not start. Use HTTPS/localhost and allow camera access.","error");console.error(e)}
 }
-async function stopSimScanner(){
- if(simScannerInstance){
-  try{await simScannerInstance.stop()}catch(e){}
-  try{simScannerInstance.clear()}catch(e){}
-  simScannerInstance=null;
- }
-}
+async function stopSimScanner(){if(simScannerInstance){try{await simScannerInstance.stop()}catch(e){}try{simScannerInstance.clear()}catch(e){}simScannerInstance=null}}
 async function lookupSimToken(){
- const token=(document.getElementById("simToken")?.value||"").trim();
- const box=document.getElementById("simResult");
- if(!token){box.innerHTML="<div class='card'>Scan or enter a SIM ID token.</div>";return}
- const r=await sb.from("sim_ids").select("id,token,status,issued_at,expires_at,person_id,persons(*)").eq("token",token).maybeSingle();
- if(r.error){box.innerHTML="<div class='card'><b>Lookup error</b><p>"+esc(r.error.message)+"</p></div>";return}
- if(!r.data){box.innerHTML="<div class='card'><b>ID NOT FOUND</b></div>";return}
- const x=r.data,p=x.persons,expired=x.expires_at&&new Date(x.expires_at)<new Date();
- if(x.status!=="Active"||expired){box.innerHTML="<div class='card'><b>ID INVALID / REVOKED</b></div>";return}
- box.innerHTML=`<div class="card"><div class="badge">SIMULATION — NOT A GOVERNMENT ID</div>
- <h2>${esc(p?.first_name||"")} ${esc(p?.last_name||"")}</h2>
- <p><b>Reference:</b> ${esc(p?.reference||"—")}</p>
- <p><b>DOB:</b> ${esc(p?.date_of_birth||"—")}</p>
- <p><b>Address:</b> ${esc(p?.address||"—")}</p>
- <p><b>Phone:</b> ${esc(p?.phone||"—")}</p>
- <p><b>Email:</b> ${esc(p?.email||"—")}</p>
- <p><b>SIM ID:</b> ${esc(x.token)}</p>
- <p><b>Status:</b> ACTIVE</p></div>`;
- try{await sb.from("sim_id_scans").insert({sim_id:x.id,scanned_at:new Date().toISOString()})}catch(e){}
+ const token=($("simToken")?.value||"").trim(),box=$("simResult");if(!token){box.innerHTML="<div class='notice error'>Scan or enter a SIM ID token.</div>";return}
+ try{
+  const r=await sb.from("sim_ids").select("id,token,status,issued_at,expires_at,person_id,persons(*)").eq("token",token).maybeSingle();
+  if(r.error)throw r.error;if(!r.data){box.innerHTML="<div class='notice error'><b>ID NOT FOUND</b></div>";return}
+  const x=r.data,p=x.persons,expired=x.expires_at&&new Date(x.expires_at)<new Date();
+  if(x.status!=="Active"||expired){box.innerHTML="<div class='notice error'><b>ID INVALID / REVOKED</b></div>";return}
+  box.innerHTML=`<div class="card"><div class="badge">SIMULATION — NOT A GOVERNMENT ID</div><h2>${esc(nameOf(p))}</h2>
+  <p><b>Reference:</b> ${esc(p?.reference||"—")}</p><p><b>DOB:</b> ${esc(p?.date_of_birth||"—")}</p>
+  <p><b>Address:</b> ${esc(p?.address||"—")}</p><p><b>Phone:</b> ${esc(p?.phone||"—")}</p>
+  <p><b>Email:</b> ${esc(p?.email||"—")}</p><p><b>SIM ID:</b> ${esc(x.token)}</p><p><b>Status:</b> ACTIVE</p></div>`;
+  sb.from("sim_id_scans").insert({sim_id:x.id,scanned_at:new Date().toISOString()}).then(()=>{}).catch(()=>{});
+ }catch(e){console.error(e);box.innerHTML="<div class='notice error'>SIM ID lookup failed. People Lookup is still available.</div>"}
 }
 
 </script>
