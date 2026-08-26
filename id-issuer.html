@@ -38,7 +38,7 @@ button{border:0;border-radius:7px;padding:11px 14px;font-weight:800;cursor:point
 <div id="printCard" class="card" style="display:none">
 <div class="no-print"><h2>Printable ID</h2></div>
 <div id="preview"></div>
-<div class="actions no-print"><button class="primary" onclick="window.print()">Print ID</button></div>
+<div class="actions no-print"><button class="primary" onclick="queueIdPrint()">Print ID</button></div>
 </div>
 </main>
 <script>
@@ -58,11 +58,33 @@ async function issue(){
  const r=await sb.from("sim_ids").insert({person_id:selected.id,token,status:$("status").value,issued_at:new Date($("issued").value+"T00:00:00").toISOString(),expires_at:$("expires").value?new Date($("expires").value+"T23:59:59").toISOString():null}).select().single();
  if(r.error){alert("Could not issue ID: "+r.error.message);return}
  const id=r.data;
+ window.currentIssuedId=id;
  $("preview").innerHTML=`<div class=warning>VIBE-HOLDINGS</div><h2>${esc(nameOf(selected))}</h2><p><b>SIM ID</b><br>${esc(token)}</p><p><b>Reference:</b> ${esc(selected.reference||"—")}</p><p><b>Issued:</b> ${esc(id.issued_at)}</p><p><b>Expires:</b> ${esc(id.expires_at||"—")}</p><div id=qr class=qr></div><div class=warning>SIMULATION — NOT A GOVERNMENT ID</div>`;
  $("printCard").style.display="block";
  new QRCode($("qr"),{text:token,width:180,height:180});
  window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
 }
+async function queueIdPrint(){
+  const btn=document.getElementById("printIdBtn");
+  if(btn){btn.disabled=true;btn.textContent="Sending…";}
+  try{
+    if(!window.currentIssuedId || !selected) throw new Error("Issue the ID first.");
+    const r=await sb.from("ticket_print_queue").insert({
+      ticket_id:null,
+      person_id:selected.id,
+      job_type:"sim_id",
+      status:"Queued",
+      sim_id:window.currentIssuedId.id
+    });
+    if(r.error) throw r.error;
+    if(btn){btn.textContent="✓ Sent to PC printer";setTimeout(()=>{btn.disabled=false;btn.textContent="🖨 Send to PC Printer"},1800);}
+  }catch(e){
+    console.error("Printer queue error:",e);
+    if(btn){btn.disabled=false;btn.textContent="🖨 Send to PC Printer";}
+    alert("ID was created successfully, but it could not be queued for printing. The Police System is still running.");
+  }
+}
+
 load();
 </script>
 </body>
