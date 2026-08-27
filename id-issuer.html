@@ -16,14 +16,14 @@ footer{text-align:center;color:#687786;font-size:11px;padding:20px}
 @media(max-width:700px){main{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}button{min-height:44px}}
 </style></head><body>
 <header><img class="logo" src="https://cdn.phototourl.com/free/2026-08-26-86cb6b53-6054-4849-8cbc-f163d7ac51c4.png"><div class="brand"><b>VHPD</b><small>Vibe-Holdings Police Department</small></div></header>
-<script>try{localStorage.setItem("vhpd_session","1")}catch(e){}</script><main>
+<main>
 <h1>ID Issuer</h1><div class=card><p class=muted>Search an existing person and issue a Vibe-Holdings simulation ID.</p>
 <label>Person name</label><input id=q oninput=searchPeople()><div id=matches></div></div></main><footer>Roleplay System</footer><script>
 const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null")||{first_name:"Officer",last_name:""};
+const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");
 const nameOf=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Unnamed";
 </script><script>
 let people=[];async function load(){let r=await sb.from("persons").select("*").order("last_name");people=r.data||[]}async function searchPeople(){let q=$("q").value.toLowerCase();$("matches").innerHTML=people.filter(p=>nameOf(p).toLowerCase().includes(q)).slice(0,10).map(p=>"<button class='secondary' style='width:100%;margin-top:6px;text-align:left' onclick='issue(""+p.id+"")'>"+esc(nameOf(p))+" — "+esc(p.reference||"")+"</button>").join("")}async function issue(pid){let token="VH-SIM-"+crypto.randomUUID().replaceAll("-","").toUpperCase();let r=await sb.from("sim_ids").insert({id:crypto.randomUUID(),person_id:pid,token,status:"Active",issued_at:new Date().toISOString()});if(r.error)alert(r.error.message);else alert("SIM ID issued: "+token)}load();
