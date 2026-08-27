@@ -19,10 +19,20 @@ footer{text-align:center;color:#687786;font-size:11px;padding:20px}
 <main>
 <h1>Hello, <span id="who"></span></h1><p class="muted">Services available</p>
 <div class="grid">
-<div class=service onclick="location.href='officer-app.html'">👮<b>Officer App</b><span class=muted>Mobile officer services</span></div>
+<div class=service id="officerAppButton">👮<b>Officer App</b><span class=muted>Mobile officer services</span></div>
 <div class=service onclick="location.href='police-system.html'">📁<b>Police System</b><span class=muted>Management and cases</span></div>
 <div class=service onclick="location.href='id-issuer.html'">🪪<b>ID Issuer</b><span class=muted>Issue simulation IDs</span></div>
-</div></main><footer>Roleplay System</footer><script>
+</div><script>
+document.addEventListener("DOMContentLoaded",function(){
+  const b=document.getElementById("officerAppButton");
+  if(b)b.addEventListener("click",function(e){
+    e.preventDefault();
+    // Keep the existing officer/session data; do not send the user through login again.
+    if(!localStorage.getItem("vhpd_session")) localStorage.setItem("vhpd_session","1");
+    window.location.assign("./officer-app.html");
+  });
+});
+</script></main><footer>Roleplay System</footer><script>
 const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
