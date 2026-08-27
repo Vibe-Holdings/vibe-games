@@ -27,7 +27,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
   <div class="brand">Officer App<small>People Lookup • Tickets • Case Information</small></div>
   <div id="officerLabel">Not signed in</div>
 </header>
-<main><h1>Hello, <span id="who">Officer</span></h1>
+<script>try{localStorage.setItem("vhpd_session","1")}catch(e){}</script><main><h1>Hello, <span id="who">Officer</span></h1>
 <p class="muted">Services available</p>
 <div class="grid" id="services">
 <button class="service" data-action="people" type="button">👤<b>People Lookup</b><span class="muted">Search people</span></button>

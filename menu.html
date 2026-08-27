@@ -16,7 +16,7 @@ footer{text-align:center;color:#687786;font-size:11px;padding:20px}
 @media(max-width:700px){main{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}button{min-height:44px}}
 </style></head><body>
 <header><img class="logo" src="https://cdn.phototourl.com/free/2026-08-26-86cb6b53-6054-4849-8cbc-f163d7ac51c4.png"><div class="brand"><b>VHPD</b><small>Vibe-Holdings Police Department</small></div></header>
-<main>
+<script>try{localStorage.setItem("vhpd_session","1")}catch(e){}</script><main>
 <h1>Hello, <span id="who"></span></h1><p class="muted">Services available</p>
 <div class="grid">
 <div class=service id="officerAppButton">👮<b>Officer App</b><span class=muted>Mobile officer services</span></div>
@@ -37,6 +37,6 @@ const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");
+const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null")||{first_name:"Officer",last_name:""};
 const nameOf=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Unnamed";
 </script><script>$("who").textContent=officer?nameOf(officer):"Officer";</script></body></html>
