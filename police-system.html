@@ -30,4 +30,22 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");
 const nameOf=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Unnamed";
-</script></body></html>
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  document.addEventListener("click", function(e){
+    const b=e.target.closest("[data-police-action]");
+    if(!b)return;
+    e.preventDefault();
+    const action=b.dataset.policeAction;
+    if(typeof showSection==="function"){showSection(action);return}
+    // Compatibility with common names used by older versions.
+    const map={people:"peoplePage",tickets:"ticketsPage",cases:"casesPage",evidence:"evidencePage",statements:"statementsPage",requests:"requestsPage"};
+    const fn=window[map[action]];
+    if(typeof fn==="function"){fn();return}
+    const area=document.getElementById("area")||document.getElementById("content");
+    if(area)area.innerHTML='<div class="notice error">This Police System section is unavailable in this build.</div>';
+  });
+});
+</script>
+</body></html>
