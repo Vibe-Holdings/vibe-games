@@ -1,63 +1,94 @@
 <!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VHPD — Vibe-Holdings Police Department</title>
+<html lang="en">
+<head><script>(function(){try{if(!sessionStorage.getItem("police_session"))window.location.replace("/");}catch(e){window.location.replace("/");}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Officer App — Vibe-Holdings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
-body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#eef2f6;color:#17212b}
-header{height:62px;background:#102a43;color:#fff;display:flex;align-items:center;padding:0 16px;gap:10px;position:sticky;top:0;z-index:5}
-.logo{width:40px;height:40px;object-fit:contain;background:#fff;border-radius:8px}.brand b{font-size:18px}.brand small{display:block;font-size:10px}
-main{max-width:1100px;margin:auto;padding:18px}.card{background:#fff;border:1px solid #d8e0e8;border-radius:12px;padding:16px;margin-bottom:14px}
-button{border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e7edf2;color:#173047}
-input,textarea,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd5df;border-radius:8px;font:inherit}label{display:block;font-size:12px;font-weight:800;margin:10px 0 5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.service{background:#fff;border:1px solid #d8e0e8;border-radius:12px;padding:16px;cursor:pointer}.muted{font-size:12px;color:#687786}
-footer{text-align:center;color:#687786;font-size:11px;padding:20px}
-@media(max-width:700px){main{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}button{min-height:44px}}
-</style></head><body>
-<header><img class="logo" src="https://cdn.phototourl.com/free/2026-08-26-86cb6b53-6054-4849-8cbc-f163d7ac51c4.png"><div class="brand"><b>VHPD</b><small>Vibe-Holdings Police Department</small></div></header>
-<main>
-<h1>Hello, <span id="who">Officer</span></h1>
+*{box-sizing:border-box}body{margin:0;background:#eef2f6;color:#17212b;font-family:Arial,sans-serif}
+header{background:#102a43;color:#fff;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+.brand{font-weight:800}.brand small{display:block;font-size:10px;color:#c8d5df;margin-top:3px}
+main{max-width:1100px;margin:auto;padding:18px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+button{border:0;border-radius:7px;padding:10px 13px;font-weight:700;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e5edf3;color:#173047}.danger{background:#fee2e2;color:#991b1b}
+.card{background:#fff;border:1px solid #dbe2e8;border-radius:10px;padding:18px;margin-bottom:15px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.full{grid-column:1/-1}label{font-size:11px;font-weight:800;display:block;margin-bottom:5px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:7px;font:inherit;background:#fff}textarea{min-height:120px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.muted{font-size:12px;color:#687585}
+.person{border:1px solid #dbe2e8;border-radius:9px;padding:13px;margin-top:9px}.person:hover{background:#f7fafc}
+.badge{display:inline-block;padding:3px 7px;border-radius:12px;font-size:10px;font-weight:800;background:#dcfce7;color:#166534}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #e5e9ed;font-size:12px;vertical-align:top}th{background:#f5f7f9}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal.show{display:flex}.modalbox{background:#fff;width:min(720px,100%);max-height:90vh;overflow:auto;border-radius:12px;padding:20px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}main{padding:10px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Officer App<small>People Lookup • Tickets • Case Information</small></div>
+  <div id="officerLabel">Not signed in</div>
+</header>
+<main><h1>Hello, <span id="who">Officer</span></h1>
 <p class="muted">Services available</p>
 <div class="grid" id="services">
-<button class="service" type="button" data-action="people">👤<b>People Lookup</b><span class="muted">Search people</span></button>
-<button class="service" type="button" data-action="scanner">📷<b>Scan ID</b><span class="muted">Scan a SIM ID</span></button>
-<button class="service" type="button" data-action="tickets">🎫<b>Tickets</b><span class="muted">Ticket services</span></button>
-<button class="service" type="button" data-action="cases">📁<b>Cases</b><span class="muted">Case services</span></button>
-<button class="service" type="button" data-action="requests">📋<b>Requests</b><span class="muted">Data requests</span></button>
-<button class="service" type="button" data-action="evidence">📸<b>Evidence</b><span class="muted">Capture evidence</span></button>
-<button class="service" type="button" data-action="statements">📝<b>Statements</b><span class="muted">Record statements</span></button>
-<button class="service" type="button" data-action="idissuer">🪪<b>ID Issuer</b><span class="muted">Issue SIM IDs</span></button>
+<button class="service" data-action="people" type="button">👤<b>People Lookup</b><span class="muted">Search people</span></button>
+<button class="service" data-action="scanner" type="button">📷<b>Scan ID</b><span class="muted">Scan a SIM ID</span></button>
+<button class="service" data-action="tickets" type="button">🎫<b>Tickets</b><span class="muted">Ticket services</span></button>
+<button class="service" data-action="cases" type="button">📁<b>Cases</b><span class="muted">Case services</span></button>
+<button class="service" data-action="requests" type="button">📋<b>Requests</b><span class="muted">Data requests</span></button>
+<button class="service" data-action="evidence" type="button">📸<b>Evidence</b><span class="muted">Evidence</span></button>
+<button class="service" data-action="statements" type="button">📝<b>Statements</b><span class="muted">Statements</span></button>
+<button class="service" data-action="idissuer" type="button">🪪<b>ID Issuer</b><span class="muted">Issue IDs</span></button>
 </div>
-<div id="notice"></div><div id="area"></div>
-
-<script>
-document.addEventListener("DOMContentLoaded",()=>{
+<div id="notice"></div><div id="area"></div><script>
+document.addEventListener("DOMContentLoaded",function(){
 const sb=supabase.createClient("https://hrqhwfbhqpjhmuvdrrzp.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvB3U1iEJq3R8w_DSSc");
-const $=x=>document.getElementById(x),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");const name=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Officer";
-$("who").textContent=name(officer);let people=[],qr=null;
-function msg(t,e=false){$("notice").innerHTML=`<div class="notice ${e?"error":"ok"}">${esc(t)}</div>`}
-function area(x){$("area").innerHTML=x}
+const $=id=>document.getElementById(id), esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">": "&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");
+const name=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Officer";
+$("who").textContent=name(officer); let people=[], qr=null;
+function area(x){$("area").innerHTML=x} function msg(x,e){$("notice").innerHTML=`<div class="notice ${e?"error":"ok"}">${esc(x)}</div>`}
+function f(p,ks){for(const k of ks)if(p?.[k]!=null&&String(p[k]).trim())return String(p[k]);return ""}
+function hasTickets(p){let v=f(p,["tickets_count","ticket_count","number_of_tickets","tickets"]);if(v&&!isNaN(v))return Number(v)>0;if(Array.isArray(p?.tickets))return p.tickets.length>0;return /yes|true|issued|ticket/i.test(v)}
+
 async function peoplePage(){
- area("<div class=card><h2>People Lookup</h2><input id=ps placeholder='Search name or reference...'><div id=pr>Loading…</div></div>");
- let r=await sb.from("persons").select("*").order("last_name");if(r.error)return msg(r.error.message,true);people=r.data||[];renderPeople();$("ps").oninput=renderPeople
+ area(`<div class="card"><h2>People Lookup</h2><p class="muted">Search by first name, gender, tickets and location.</p>
+ <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+ <div><label>Search</label><input id="pSearch" placeholder="Name or reference"></div>
+ <div><label>First name</label><input id="pFirst" placeholder="First name"></div>
+ <div><label>Gender</label><select id="pGender"><option value="">All</option><option>Male</option><option>Female</option><option>Other</option><option>Unknown</option></select></div>
+ <div><label>Location</label><input id="pLocation" placeholder="Town / area / street"></div>
+ <div><label>Tickets</label><select id="pTickets"><option value="">Any</option><option value="yes">Has tickets</option><option value="no">No tickets</option></select></div></div>
+ <div class="row"><button class="primary" id="doSearch">Search</button><button class="secondary" id="clearSearch">Clear</button><span class="muted" id="status">Loading database…</span></div></div>
+ <div id="peopleResults"><div class="card">Loading database…</div></div>`);
+ try{
+  let r=await sb.from("persons").select("*").order("last_name",{ascending:true});
+  if(r.error){$("status").textContent="Database error";$("peopleResults").innerHTML=`<div class="notice error"><b>Database could not be loaded.</b><br>${esc(r.error.message)}</div>`;return}
+  people=r.data||[];$("status").textContent=`${people.length} people loaded`;renderPeople();
+ }catch(e){$("status").textContent="Connection error";$("peopleResults").innerHTML=`<div class="notice error"><b>Database connection failed.</b><br>${esc(e.message)}</div>`}
+ ["pSearch","pFirst","pLocation"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")renderPeople()}));
+ $("pGender").onchange=renderPeople;$("pTickets").onchange=renderPeople;$("doSearch").onclick=renderPeople;
+ $("clearSearch").onclick=()=>{["pSearch","pFirst","pLocation"].forEach(id=>$(id).value="");$("pGender").value="";$("pTickets").value="";renderPeople()}
 }
-function renderPeople(){let q=($("ps").value||"").toLowerCase();$("pr").innerHTML=people.filter(p=>(name(p)+" "+(p.reference||"")).toLowerCase().includes(q)).map(p=>`<div class=card><b>${esc(name(p))}</b><div class=muted>${esc(p.reference||"")}</div><span class="badge ${p.locked?"warn":"ok"}">${p.locked?"LOCKED":"AVAILABLE"}</span><button class=secondary data-open="${p.id}" type=button>Open</button></div>`).join("")||"<p class=muted>No people found.</p>";document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openPerson(b.dataset.open))}
-function openPerson(id){let p=people.find(x=>String(x.id)===String(id));if(!p)return;if(p.locked){area("<div class=card><h2>Profile Locked</h2><p>This profile requires an authorised data request.</p><button class=primary id=req>Submit Data Request</button></div>");$("req").onclick=()=>requestPage(p);return}area(`<div class=card><h2>${esc(name(p))}</h2><p>Reference: ${esc(p.reference||"—")}</p><p>DOB: ${esc(p.date_of_birth||"—")}</p><p>Address: ${esc(p.address||"—")}</p><button class=primary id=pl>🖨 Send to PC Printer</button></div>`);$("pl").onclick=async()=>{let r=await sb.from("ticket_print_queue").insert({ticket_id:null,person_id:p.id,job_type:"person_lookup",status:"Queued"});if(r.error)msg(r.error.message,true);else msg("Lookup sent to PC printer.")}}
-function requestPage(p){let rid="DR-"+Date.now().toString().slice(-8);area(`<div class=card><h2>Data Request</h2><label>Officer</label><input readonly value="${esc(name(officer))}"><label>Person</label><input readonly value="${esc(name(p))}"><label>Person Reference</label><input readonly value="${esc(p.reference||"")}"><label>Request ID</label><input readonly value="${rid}"><label>Why are you requesting this data?</label><textarea id=rr></textarea><button class=primary id=sr>Submit Data Request</button></div>`);$("sr").onclick=async()=>{let reason=$("rr").value.trim();if(!reason)return msg("Enter why you are requesting this data.",true);let r=await sb.from("data_requests").insert({request_number:rid,officer_id:officer?.id||null,person_id:p.id,reason,status:"Pending",requested_at:new Date().toISOString()}).select().single();if(r.error)return msg(r.error.message,true);try{await sb.from("ticket_print_queue").insert({ticket_id:null,person_id:p.id,job_type:"data_request",status:"Queued",data_request_id:r.data.id})}catch(e){}area(`<div class=card><h2>Data Form Submitted</h2><p>Request ${esc(rid)} is Pending.</p><p>It will automatically approve in 50 seconds.</p></div>`);setTimeout(()=>sb.from("data_requests").update({status:"Approved",approved_at:new Date().toISOString()}).eq("id",r.data.id),50000)}}
-async function scannerPage(){area("<div class=card><h2>SIM ID Scanner</h2><div id=reader></div><button class=primary id=sc>Start Camera</button> <button class=secondary id=st>Stop</button><label>Manual token</label><input id=tok placeholder='VH-SIM-...'><button class=secondary id=lu>Look Up</button><div id=srch></div></div>");$("sc").onclick=start; $("st").onclick=stop; $("lu").onclick=lookup}
-async function start(){if(typeof Html5Qrcode==="undefined")return msg("Scanner library failed to load.",true);try{await stop();qr=new Html5Qrcode("reader");await qr.start({facingMode:"environment"},{fps:10,qrbox:250},async t=>{$("tok").value=t;await lookup();await stop()},()=>{})}catch(e){msg("Camera unavailable. Use HTTPS and allow camera access.",true)}}
-async function stop(){if(qr){try{await qr.stop()}catch(e){}try{qr.clear()}catch(e){}qr=null}}
-async function lookup(){let t=($("tok").value||"").trim();if(!t)return;let r=await sb.from("sim_ids").select("*,persons(*)").eq("token",t).maybeSingle();if(r.error)return msg(r.error.message,true);if(!r.data)return msg("ID not found.",true);$("srch").innerHTML=`<div class=card><span class="badge ok">ACTIVE</span><h2>${esc(name(r.data.persons))}</h2><p>Reference: ${esc(r.data.persons?.reference||"—")}</p><p>SIM ID: ${esc(r.data.token)}</p></div>`}
+function renderPeople(){
+ let q=$("pSearch").value.trim().toLowerCase(),first=$("pFirst").value.trim().toLowerCase(),g=$("pGender").value.toLowerCase(),loc=$("pLocation").value.trim().toLowerCase(),tf=$("pTickets").value;
+ let rows=people.filter(p=>{let full=name(p).toLowerCase(),ref=f(p,["reference","person_reference","ref"]).toLowerCase(),fn=f(p,["first_name","firstname","forename"]).toLowerCase(),pg=(f(p,["gender","sex"])||"Unknown").toLowerCase(),pl=f(p,["location","address","town","city","area","postcode"]).toLowerCase(),ht=hasTickets(p);return(!q||(full.includes(q)||ref.includes(q)))&&(!first||fn.includes(first))&&(!g||pg===g)&&(!loc||pl.includes(loc))&&(tf!=="yes"||ht)&&(tf!=="no"||!ht)});
+ $("status").textContent=`${rows.length} result${rows.length===1?"":"s"} from ${people.length} people`;
+ $("peopleResults").innerHTML=rows.map(p=>`<div class="card"><div class="row"><div><b>${esc(name(p))}</b><div class="muted">${esc(f(p,["reference","person_reference"])||"No reference")}</div></div><div class="spacer"></div><span class="badge ${p.locked?"warn":"ok"}">${p.locked?"LOCKED":"AVAILABLE"}</span></div><div class="muted">Gender: ${esc(f(p,["gender","sex"])||"Unknown")} · Location: ${esc(f(p,["location","town","city","address"])||"Unknown")} · Tickets: ${hasTickets(p)?"Yes":"No"}</div><button class="secondary openPerson" data-id="${esc(p.id)}" type="button">Open Profile</button></div>`).join("")||"<div class=card>No people match those filters.</div>";
+ document.querySelectorAll(".openPerson").forEach(b=>b.onclick=()=>openPerson(b.dataset.id))
+}
+function openPerson(id){let p=people.find(x=>String(x.id)===String(id));if(!p)return;if(p.locked){area("<div class=card><h2>Profile Locked</h2><p>This profile requires a data request.</p><button class=primary id=req>Submit Data Request</button></div>");$("req").onclick=()=>requestPage(p);return}area(`<div class=card><h2>${esc(name(p))}</h2><p>Reference: ${esc(f(p,["reference"])||"—")}</p><p>Gender: ${esc(f(p,["gender","sex"])||"Unknown")}</p><p>Location: ${esc(f(p,["location","address","town","city"])||"Unknown")}</p><p>DOB: ${esc(p.date_of_birth||"—")}</p><button class=primary id=print>🖨 Send to PC Printer</button></div>`);$("print").onclick=async()=>{let r=await sb.from("ticket_print_queue").insert({ticket_id:null,person_id:p.id,job_type:"person_lookup",status:"Queued"});r.error?msg(r.error.message,true):msg("Lookup sent to PC printer.")}}
+function requestPage(p){let rid="DR-"+Date.now().toString().slice(-8);area(`<div class=card><h2>Data Request</h2><label>Officer</label><input readonly value="${esc(name(officer))}"><label>Person</label><input readonly value="${esc(name(p))}"><label>Person Reference</label><input readonly value="${esc(f(p,["reference"]))}"><label>Request ID</label><input readonly value="${rid}"><label>Why are you requesting this data?</label><textarea id=reason></textarea><button class=primary id=sub>Submit Data Request</button></div>`);$("sub").onclick=async()=>{let reason=$("reason").value.trim();if(!reason)return msg("Enter a reason.",true);let r=await sb.from("data_requests").insert({request_number:rid,officer_id:officer?.id||null,person_id:p.id,reason,status:"Pending",requested_at:new Date().toISOString()}).select().single();if(r.error)return msg(r.error.message,true);try{await sb.from("ticket_print_queue").insert({ticket_id:null,person_id:p.id,job_type:"data_request",status:"Queued",data_request_id:r.data.id})}catch(e){}area("<div class=card><h2>Data Form Submitted</h2><p>Request is Pending and will auto-approve in 50 seconds.</p></div>");setTimeout(()=>sb.from("data_requests").update({status:"Approved",approved_at:new Date().toISOString()}).eq("id",r.data.id),50000)}}
+async function scannerPage(){area("<div class=card><h2>SIM ID Scanner</h2><div id=reader></div><button class=primary id=start>Start Camera</button> <button class=secondary id=stop>Stop</button><label>Manual token</label><input id=token placeholder='VH-SIM-...'><button class=secondary id=lookup>Look Up</button><div id=result></div></div>");$("start").onclick=startScan;$("stop").onclick=stopScan;$("lookup").onclick=lookupToken}
+async function startScan(){if(typeof Html5Qrcode==="undefined")return msg("Scanner library failed to load.",true);try{await stopScan();qr=new Html5Qrcode("reader");await qr.start({facingMode:"environment"},{fps:10,qrbox:250},async t=>{$("token").value=t;await lookupToken();await stopScan()},()=>{})}catch(e){msg("Camera unavailable. Use HTTPS and allow camera access.",true)}}
+async function stopScan(){if(qr){try{await qr.stop()}catch(e){}try{qr.clear()}catch(e){}qr=null}}
+async function lookupToken(){let t=($("token").value||"").trim();if(!t)return;let r=await sb.from("sim_ids").select("*,persons(*)").eq("token",t).maybeSingle();if(r.error)return msg(r.error.message,true);if(!r.data)return msg("ID not found.",true);$("result").innerHTML=`<div class=card><span class="badge ok">${esc(r.data.status)}</span><h2>${esc(name(r.data.persons))}</h2><p>Reference: ${esc(r.data.persons?.reference||"—")}</p><p>SIM ID: ${esc(r.data.token)}</p></div>`}
 function ticketsPage(){area("<div class=card><h2>Tickets</h2><p>Ticket printing uses the PC printer service.</p></div>")}
-function casesPage(){area("<div class=card><h2>Cases</h2><p>Open the Police System for case management.</p><button class=primary id=oc>Open Police System</button></div>");$("oc").onclick=()=>location.href="police-system.html"}
-async function requestsPage(){let r=await sb.from("data_requests").select("*").order("requested_at",{ascending:false});area(`<div class=card><h2>Requests</h2>${r.error?`<div class="notice error">${esc(r.error.message)}</div>`:(r.data||[]).map(x=>`<div class=card><b>${esc(x.request_number)}</b> — ${esc(x.status)}<p class=muted>${esc(x.reason)}</p></div>`).join("")||"<p>No requests.</p>"}</div>`)}
-function evidencePage(){area("<div class=card><h2>Evidence</h2><input type=file accept='image/*' capture='environment' multiple><p class=muted>Take or select evidence photos.</p></div>")}
-function statementsPage(){area("<div class=card><h2>Statements</h2><textarea placeholder='Type statement...'></textarea><label>Officer e-signature</label><input placeholder='Type full name'><button class=primary type=button>Save Statement</button></div>")}
-function idPage(){location.href="id-issuer.html"}
-const actions={people:peoplePage,scanner:scannerPage,tickets:ticketsPage,cases:casesPage,requests:requestsPage,evidence:evidencePage,statements:statementsPage,idissuer:idPage};
+function casesPage(){area("<div class=card><h2>Cases</h2><p>Case management is available in the Police System.</p><button class=primary id=openCases>Open Police System</button></div>");$("openCases").onclick=()=>location.href="police-system.html"}
+async function requestsPage(){let r=await sb.from("data_requests").select("*").order("requested_at",{ascending:false});area(`<div class=card><h2>Requests</h2>${r.error?`<div class="notice error">${esc(r.error.message)}</div>`:(r.data||[]).map(x=>`<div class=card><b>${esc(x.request_number)}</b> — ${esc(x.status)}<p>${esc(x.reason)}</p></div>`).join("")||"<p>No requests.</p>"}</div>`)}
+function evidencePage(){area("<div class=card><h2>Evidence</h2><input type=file accept='image/*' capture='environment' multiple><p>Take or select evidence photos.</p></div>")}
+function statementsPage(){area("<div class=card><h2>Statements</h2><textarea placeholder='Type statement...'></textarea><label>Officer e-signature</label><input placeholder='Full name'><button class=primary type=button>Save Statement</button></div>")}
+function idIssuerPage(){location.href="id-issuer.html"}
+const actions={people:peoplePage,scanner:scannerPage,tickets:ticketsPage,cases:casesPage,requests:requestsPage,evidence:evidencePage,statements:statementsPage,idissuer:idIssuerPage};
 document.querySelectorAll("[data-action]").forEach(b=>b.addEventListener("click",()=>actions[b.dataset.action]()));
 });
-</script>
-<footer>Roleplay System</footer></body></html>
+</script><footer>Roleplay System</footer></body></html>
