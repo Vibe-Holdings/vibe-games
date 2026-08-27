@@ -43,7 +43,7 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 document.addEventListener("DOMContentLoaded",function(){
 const sb=supabase.createClient("https://hrqhwfbhqpjhmuvdrrzp.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvB3U1iEJq3R8w_DSSc");
 const $=id=>document.getElementById(id), esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">": "&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");
+const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null")||{first_name:"Officer",last_name:""};
 const name=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Officer";
 $("who").textContent=name(officer); let people=[], qr=null;
 function area(x){$("area").innerHTML=x} function msg(x,e){$("notice").innerHTML=`<div class="notice ${e?"error":"ok"}">${esc(x)}</div>`}
