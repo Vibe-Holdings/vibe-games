@@ -16,4 +16,84 @@ function openCase(id){let c=data.cases.find(x=>String(x.id)===String(id));if(!c)
 async function saveStatement(id){let text=$('statementText').value.trim();if(!text){note('Enter statement text.',true);return}let r=await db.from('statements').insert({case_id:id,text,status:'Recorded',created_at:new Date().toISOString()});if(r.error){note(r.error.message,true);return}note('Statement recorded');openCase(id)}
 async function closeCase(id){let r=await db.from('cases').update({status:'Closed',archived:true,archived_at:new Date().toISOString()}).eq('id',id);if(r.error){note(r.error.message,true);return}let c=data.cases.find(x=>String(x.id)===String(id));if(c){c.status='Closed';c.archived=true}note('Case closed and archived');render()}
 document.addEventListener('click',e=>{let b=e.target.closest('[data-action]');if(!b)return;let a=b.dataset.action;if(a==='new-case')newCase();else if(a==='save-case')saveCase();else if(a==='open-case')openCase(b.dataset.id);else if(a==='close-case')closeCase(b.dataset.id);else if(a==='back-cases')setTab('cases');else if(a==='save-statement')saveStatement(b.dataset.id)});document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));$('refresh').addEventListener('click',load);setTab('cases');load();
-</script></body></html>
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
+  const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviYwQ8ujutdvU3B1iEJq3R8w_DSSc";
+  if(typeof supabase==="undefined") return;
+  const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const findArea=()=>document.getElementById("area")||document.getElementById("content")||document.querySelector("main");
+
+  window.vhpdPeoplePage=function(){
+    const a=findArea(); if(!a)return;
+    a.innerHTML=`<div class="card"><h2>People</h2>
+      <div class="row"><button class="primary" id="vhpdAddPerson" type="button">Add Person</button><button class="secondary" id="vhpdRefreshPeople" type="button">Refresh</button></div>
+      <div id="vhpdPeopleList">Loading people…</div></div>`;
+    document.getElementById("vhpdAddPerson").onclick=window.vhpdAddPersonForm;
+    document.getElementById("vhpdRefreshPeople").onclick=window.vhpdLoadPeople;
+    window.vhpdLoadPeople();
+  };
+  window.vhpdLoadPeople=async function(){
+    const box=document.getElementById("vhpdPeopleList"); if(!box)return;
+    box.textContent="Loading people…";
+    try{
+      const r=await db.from("persons").select("*").order("last_name",{ascending:true});
+      if(r.error){box.innerHTML=`<div class="notice error">Database error: ${esc(r.error.message)}</div>`;return}
+      const rows=r.data||[];
+      box.innerHTML=rows.map(p=>`<div class="card"><b>${esc([p.first_name,p.middle_name,p.last_name].filter(Boolean).join(" ")||"Unnamed")}</b><div class="muted">${esc(p.reference||"")} · ${esc(p.gender||"Unknown")} · ${esc(p.location||p.address||"")}</div></div>`).join("")||"<p>No people in database.</p>";
+    }catch(e){box.innerHTML=`<div class="notice error">${esc(e.message)}</div>`}
+  };
+  window.vhpdAddPersonForm=function(){
+    const a=findArea();if(!a)return;
+    a.innerHTML=`<div class="card"><h2>Add Person</h2>
+      <label>First name *</label><input id="apFirst" autocomplete="off">
+      <label>Middle name</label><input id="apMiddle" autocomplete="off">
+      <label>Last name *</label><input id="apLast" autocomplete="off">
+      <label>Date of birth</label><input id="apDob" type="date">
+      <label>Gender</label><select id="apGender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option><option>Unknown</option></select>
+      <label>Location / Address</label><input id="apLocation" autocomplete="street-address">
+      <label>Reference</label><input id="apRef" placeholder="Optional">
+      <div class="row"><button class="primary" id="savePerson" type="button">Save Person</button><button class="secondary" id="cancelPerson" type="button">Cancel</button></div>
+      <div id="saveResult"></div></div>`;
+    document.getElementById("cancelPerson").onclick=window.vhpdPeoplePage;
+    document.getElementById("savePerson").onclick=window.vhpdSavePerson;
+  };
+  window.vhpdSavePerson=async function(){
+    const result=document.getElementById("saveResult");
+    const first=document.getElementById("apFirst").value.trim(), last=document.getElementById("apLast").value.trim();
+    if(!first||!last){result.innerHTML='<div class="notice error">First name and last name are required.</div>';return}
+    const data={
+      first_name:first,
+      middle_name:document.getElementById("apMiddle").value.trim()||null,
+      last_name:last,
+      date_of_birth:document.getElementById("apDob").value||null,
+      gender:document.getElementById("apGender").value||null,
+      location:document.getElementById("apLocation").value.trim()||null,
+      reference:document.getElementById("apRef").value.trim()||null
+    };
+    result.innerHTML='<div class="notice">Saving to database…</div>';
+    try{
+      const r=await db.from("persons").insert(data).select().single();
+      if(r.error){result.innerHTML=`<div class="notice error"><b>Person was not saved.</b><br>${esc(r.error.message)}</div>`;return}
+      result.innerHTML=`<div class="notice">Person saved successfully. Database ID: ${esc(r.data.id)}</div>`;
+      setTimeout(window.vhpdPeoplePage,700);
+    }catch(e){result.innerHTML=`<div class="notice error">${esc(e.message)}</div>`}
+  };
+
+  // Universal click bridge: makes existing Police App menu buttons invoke the
+  // correct section when their old handler is absent/broken.
+  document.addEventListener("click",function(e){
+    const b=e.target.closest("button,[role='button'],a");if(!b)return;
+    const text=(b.textContent||"").trim().toLowerCase();
+    const explicit=(b.dataset.section||b.dataset.action||"").toLowerCase();
+    const key=explicit||text;
+    if(/people|person|lookup/.test(key)){
+      if(typeof window.showSection==="function"){try{window.showSection("people");return}catch(_){}}
+      if(typeof window.vhpdPeoplePage==="function"){e.preventDefault();window.vhpdPeoplePage();return}
+    }
+  },true);
+});
+</script>
+</body></html>
