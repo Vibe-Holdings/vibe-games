@@ -109,5 +109,19 @@ tr:last-child td{border-bottom:0}
 function openApp(path){location.href=path}
 function logout(){sessionStorage.removeItem("police_session");location.replace("index.html")}
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+  const b=document.getElementById("mdtButton");
+  if(!b)return;
+  const open=()=>window.location.assign("./in-car-mdt.html");
+  b.addEventListener("click",open);
+  b.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}});
+});
+</script>
 </body>
 </html>
+
+<div class="service" id="mdtButton" role="button" tabindex="0">
+  🚓 <b>In-Car MDT</b><span class="muted">VHPD vehicle computer</span>
+</div>

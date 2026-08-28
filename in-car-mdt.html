@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VHPD In-Car MDT</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef1f4;color:#17202a}
+.top{background:#101820;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:5}
+.logo{width:38px;height:38px;border-radius:8px;object-fit:cover;background:#fff}.title{font-size:19px;font-weight:700}.sub{font-size:12px;opacity:.7}
+.wrap{max-width:1200px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.card{background:#fff;border:1px solid #d9e0e6;border-radius:12px;padding:16px;box-shadow:0 2px 8px #0000000b}
+button{font:inherit;cursor:pointer}.tile{border:1px solid #d9e0e6;background:#fff;border-radius:12px;padding:18px;text-align:left;min-height:105px}.tile:hover{transform:translateY(-1px);box-shadow:0 4px 12px #0002}.tile b{display:block;margin:7px 0}.muted{color:#66717c;font-size:13px}
+.primary,.secondary{border:0;border-radius:8px;padding:10px 14px;margin:4px 4px 4px 0}.primary{background:#101820;color:#fff}.secondary{background:#e9edf1;color:#17202a}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd3da;border-radius:8px;margin:5px 0 10px;background:#fff}label{font-size:13px;font-weight:700;display:block}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.grow{flex:1}.badge{display:inline-block;padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700;background:#e9edf1}.red{background:#f9dddd}.green{background:#dff3e4}.amber{background:#fff0c9}
+.notice{padding:10px;border-radius:8px;margin:10px 0;background:#e9f1ff}.error{background:#f9dddd}.call{border-left:5px solid #101820;margin:10px 0}.hidden{display:none}
+footer{text-align:center;padding:20px;color:#7a838c;font-size:11px}
+</style>
+</head>
+<body>
+<header class="top">
+<img class="logo" src="https://cdn.phototourl.com/free/2026-08-26-86cb6b53-6054-4849-8cbc-f163d7ac51c4.png">
+<div><div class="title">VHPD In-Car MDT</div><div class="sub">Mobile Data Terminal</div></div>
+<div class="grow"></div><div id="officerTop" class="sub">Officer</div>
+</header>
+<div class="wrap"><div style="margin-bottom:12px"><button class="secondary" id="menuBack" type="button">← Main Menu</button></div>
+<section id="home">
+<h1>In-Car MDT</h1><p class="muted">Police services available from this vehicle.</p>
+<div class="grid">
+<button class="tile" data-page="people">👤<b>People Lookup</b><span class="muted">Search the people database</span></button>
+<button class="tile" data-page="vehicles">🚗<b>Vehicle Lookup</b><span class="muted">Search vehicle records</span></button>
+<button class="tile" data-page="tickets">🎫<b>Tickets</b><span class="muted">View and manage tickets</span></button>
+<button class="tile" data-page="calls">🚨<b>Active Calls</b><span class="muted">Current incidents and calls</span></button>
+<button class="tile" data-page="dispatch">📻<b>Dispatch</b><span class="muted">Unit and call information</span></button>
+<button class="tile" data-page="cases">📁<b>Cases</b><span class="muted">Case management</span></button>
+<button class="tile" data-page="requests">📋<b>Data Requests</b><span class="muted">Officer data requests</span></button>
+<button class="tile" data-page="status">👮<b>Officer Status</b><span class="muted">Set your current status</span></button>
+<button class="tile" data-page="location">📍<b>Location</b><span class="muted">Set or view vehicle location</span></button>
+</div>
+</section>
+<section id="app" class="hidden"></section>
+</div>
+<footer>Roleplay System</footer>
+<script>document.addEventListener("DOMContentLoaded",()=>{const b=document.getElementById("menuBack");if(b)b.onclick=()=>location.href="./menu.html";});
+const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null")||{first_name:"Officer",last_name:""};
+const name=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Officer";
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+document.getElementById("officerTop").textContent=name(officer);
+const home=document.getElementById("home"),app=document.getElementById("app");
+function page(title,content){app.classList.remove("hidden");home.classList.add("hidden");app.innerHTML=`<button class="secondary" id="back">← MDT Home</button><div class="card"><h2>${title}</h2>${content}</div>`;document.getElementById("back").onclick=homePage}
+function homePage(){app.classList.add("hidden");home.classList.remove("hidden")}
+function field(p,ks){for(const k of ks)if(p?.[k]!=null&&String(p[k]).trim())return String(p[k]);return ""}
+async function people(){
+ page("People Lookup",`<div class="grid"><div><label>First name</label><input id="pf"></div><div><label>Gender</label><select id="pg"><option value="">Any</option><option>Male</option><option>Female</option><option>Other</option></select></div><div><label>Location</label><input id="pl"></div><div><label>General search</label><input id="pq" placeholder="Name / reference"></div></div><button class="primary" id="ps">Search</button><div id="pr">Loading…</div>`);
+ let r=await sb.from("persons").select("*").order("last_name",{ascending:true});
+ if(r.error){document.getElementById("pr").innerHTML=`<div class="notice error">${esc(r.error.message)}</div>`;return}
+ const data=r.data||[];
+ const render=()=>{let q=pq.value.toLowerCase(),f=pf.value.toLowerCase(),g=pg.value.toLowerCase(),l=pl.value.toLowerCase();let rows=data.filter(p=>{let n=name(p).toLowerCase(),fn=field(p,["first_name"]).toLowerCase(),gg=field(p,["gender","sex"]).toLowerCase(),ll=field(p,["location","address","town","city"]).toLowerCase(),ref=field(p,["reference"]).toLowerCase();return(!q||(n.includes(q)||ref.includes(q)))&&(!f||fn.includes(f))&&(!g||gg===g)&&(!l||ll.includes(l))});pr.innerHTML=rows.map(p=>`<div class="card"><b>${esc(name(p))}</b><p class="muted">${esc(field(p,["reference"])||"No reference")} · ${esc(field(p,["location","town","city","address"])||"No location")}</p></div>`).join("")||"<p class=muted>No matches.</p>"};
+ ps.onclick=render;render()
+}
+async function vehicles(){
+ page("Vehicle Lookup",`<label>Registration</label><input id="reg" placeholder="e.g. VHPD 001"><button class="primary" id="vehicleSearch">Search Vehicle</button><div id="vr"></div>`);
+ vehicleSearch.onclick=async()=>{let q=reg.value.trim();if(!q)return;let r=await sb.from("vehicles").select("*").ilike("registration",q).maybeSingle();vr.innerHTML=r.error?`<div class="notice error">${esc(r.error.message)}</div>`:r.data?`<div class=card><b>${esc(r.data.registration)}</b><p>Make: ${esc(r.data.make||"—")}</p><p>Model: ${esc(r.data.model||"—")}</p><p>Colour: ${esc(r.data.colour||"—")}</p><p>Status: ${esc(r.data.status||"—")}</p></div>`:"<div class='notice error'>Vehicle not found.</div>"}
+}
+function tickets(){page("Tickets","<p class=muted>Ticket records can be viewed and managed from the connected ticket system.</p><button class=primary type=button id=openPolice>Open Police System</button>");openPolice.onclick=()=>location.href="police-system.html"}
+async function calls(){page("Active Calls","<p class=muted>Active call feed.</p><div id=cr>Loading…</div>");let r=await sb.from("incidents").select("*").order("created_at",{ascending:false}).limit(50);cr.innerHTML=r.error?`<div class="notice error">${esc(r.error.message)}</div>`:(r.data||[]).map(x=>`<div class="card call"><b>${esc(x.title||x.incident_number||"Call")}</b><p>${esc(x.location||"Location unavailable")}</p><span class="badge ${x.priority==="High"?"red":"amber"}">${esc(x.priority||"Standard")}</span></div>`).join("")||"<p>No active calls.</p>"}
+function dispatch(){page("Dispatch","<div class=card><b>Unit Status</b><p class=muted>Use this screen for dispatch information and unit status.</p><button class=primary id=statusBtn>Set Status</button></div>");statusBtn.onclick=()=>statusPage()}
+function cases(){page("Cases","<p class=muted>Case management is available through the Police System.</p><button class=primary id=caseBtn>Open Police System</button>");caseBtn.onclick=()=>location.href="police-system.html"}
+async function requests(){page("Data Requests","<div id=rr>Loading…</div>");let r=await sb.from("data_requests").select("*").order("requested_at",{ascending:false}).limit(50);rr.innerHTML=r.error?`<div class="notice error">${esc(r.error.message)}</div>`:(r.data||[]).map(x=>`<div class=card><b>${esc(x.request_number||x.id)}</b> — ${esc(x.status||"Pending")}<p>${esc(x.reason||"")}</p></div>`).join("")||"<p>No requests.</p>"}
+function statusPage(){page("Officer Status",`<label>Status</label><select id="os"><option>Available</option><option>En Route</option><option>On Scene</option><option>Busy</option><option>Meal</option><option>Off Duty</option></select><button class=primary id=setStatus>Set Status</button><div id=st></div>`);setStatus.onclick=()=>{localStorage.setItem("vhpd_officer_status",os.value);st.innerHTML=`<div class="notice">Status set to <b>${esc(os.value)}</b>.</div>`}}
+function locationPage(){page("Location",`<label>Current vehicle location</label><input id=loc placeholder="e.g. Whitburn High Street"><button class=primary id=setLoc>Save Location</button><div id=lr></div>`);loc.value=localStorage.getItem("vhpd_mdt_location")||"";setLoc.onclick=()=>{localStorage.setItem("vhpd_mdt_location",loc.value);lr.innerHTML="<div class=notice>Vehicle location saved.</div>"}}
+const actions={people,vehicles,tickets,calls,dispatch,cases,requests,status:statusPage,location:locationPage};
+document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>actions[b.dataset.page]()));
+</script>
