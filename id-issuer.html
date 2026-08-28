@@ -1,30 +1,69 @@
 <!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VHPD — Vibe-Holdings Police Department</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ID Issuer — Vibe-Holdings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
-body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#eef2f6;color:#17212b}
-header{height:62px;background:#102a43;color:#fff;display:flex;align-items:center;padding:0 16px;gap:10px;position:sticky;top:0;z-index:5}
-.logo{width:40px;height:40px;object-fit:contain;background:#fff;border-radius:8px}.brand b{font-size:18px}.brand small{display:block;font-size:10px}
-main{max-width:1100px;margin:auto;padding:18px}.card{background:#fff;border:1px solid #d8e0e8;border-radius:12px;padding:16px;margin-bottom:14px}
-button{border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e7edf2;color:#173047}
-input,textarea,select{width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd5df;border-radius:8px;font:inherit}label{display:block;font-size:12px;font-weight:800;margin:10px 0 5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.service{background:#fff;border:1px solid #d8e0e8;border-radius:12px;padding:16px;cursor:pointer}.muted{font-size:12px;color:#687786}
-footer{text-align:center;color:#687786;font-size:11px;padding:20px}
-@media(max-width:700px){main{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}button{min-height:44px}}
-</style></head><body>
-<header><img class="logo" src="https://cdn.phototourl.com/free/2026-08-26-86cb6b53-6054-4849-8cbc-f163d7ac51c4.png"><div class="brand"><b>VHPD</b><small>Vibe-Holdings Police Department</small></div></header>
+*{box-sizing:border-box}body{margin:0;background:#eef2f6;color:#17212b;font-family:Arial,sans-serif}
+header{background:#102a43;color:#fff;padding:15px 20px;font-weight:800}header small{display:block;font-size:10px;color:#cbd5df;margin-top:3px}
+main{max-width:900px;margin:auto;padding:18px}.card{background:#fff;border:1px solid #dbe2e8;border-radius:10px;padding:18px;margin-bottom:15px}
+label{display:block;font-size:11px;font-weight:800;margin:10px 0 5px}input,select{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:7px;font:inherit}
+button{border:0;border-radius:7px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:#173f5f;color:#fff}.secondary{background:#e5edf3;color:#173047}
+.person{border:1px solid #dbe2e8;border-radius:9px;padding:12px;margin-top:7px;cursor:pointer}.person:hover{background:#f7fafc}.muted{font-size:12px;color:#687585}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+#preview{width:340px;max-width:100%;border:2px solid #111;border-radius:14px;padding:18px;background:#fff;margin-top:18px}
+.qr{display:flex;justify-content:center;margin:14px 0}.warning{font-size:10px;font-weight:900;letter-spacing:.07em}
+@media print{body{background:#fff}header,main>.card:not(#printCard),#printCard .no-print{display:none!important}#printCard{display:block!important;margin:0;border:2px solid #111;width:80mm;box-shadow:none}}
+</style>
+</head>
+<body>
+<header>Vibe-Holdings ID Issuer<small>SIMULATION — NOT A GOVERNMENT / DVLA SERVICE</small></header>
 <main>
-<h1>ID Issuer</h1><div class=card><p class=muted>Search an existing person and issue a Vibe-Holdings simulation ID.</p>
-<label>Person name</label><input id=q oninput=searchPeople()><div id=matches></div></div></main><footer>Roleplay System</footer><script>
+<div class="card">
+<h2>Issue ID</h2>
+<p class="muted">Type the person's name and select the existing database record.</p>
+<label>Person name</label><input id="search" placeholder="Start typing a name..." autocomplete="off">
+<div id="matches"></div>
+<div id="selected"></div>
+<div id="details" style="display:none">
+<label>Issue date</label><input id="issued" type="date">
+<label>Expiry date</label><input id="expires" type="date">
+<label>Status</label><select id="status"><option>Active</option><option>Suspended</option></select>
+<div class="actions"><button class="primary" onclick="issue()">Issue ID</button></div>
+</div>
+</div>
+<div id="printCard" class="card" style="display:none">
+<div class="no-print"><h2>Printable ID</h2></div>
+<div id="preview"></div>
+<div class="actions no-print"><button class="primary" onclick="window.print()">Print ID</button></div>
+</div>
+</main>
+<script>
 const SUPABASE_URL="https://hrqhwfbhqpjhmuvdrrzp.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhycWh3ZmJocXBqaG11dmRycnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0Mjk3MzksImV4cCI6MjEwMzAwNTczOX0.s3PFWbFOqw8tvlviwYQ8ujutdvU3B1iEJq3R8w_DSSc";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-const $=id=>document.getElementById(id),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const officer=JSON.parse(localStorage.getItem("vhpd_officer")||"null");
-const nameOf=p=>[p?.first_name,p?.middle_name,p?.last_name].filter(Boolean).join(" ")||"Unnamed";
-</script><script>
-let people=[];async function load(){let r=await sb.from("persons").select("*").order("last_name");people=r.data||[]}async function searchPeople(){let q=$("q").value.toLowerCase();$("matches").innerHTML=people.filter(p=>nameOf(p).toLowerCase().includes(q)).slice(0,10).map(p=>"<button class='secondary' style='width:100%;margin-top:6px;text-align:left' onclick='issue(""+p.id+"")'>"+esc(nameOf(p))+" — "+esc(p.reference||"")+"</button>").join("")}async function issue(pid){let token="VH-SIM-"+crypto.randomUUID().replaceAll("-","").toUpperCase();let r=await sb.from("sim_ids").insert({id:crypto.randomUUID(),person_id:pid,token,status:"Active",issued_at:new Date().toISOString()});if(r.error)alert(r.error.message);else alert("SIM ID issued: "+token)}load();
-</script></body></html>
+const $=id=>document.getElementById(id),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let people=[],selected=null;
+function nameOf(p){return [p.first_name,p.middle_name,p.last_name].filter(Boolean).join(" ")||"Unnamed"}
+async function load(){const r=await sb.from("persons").select("*").order("last_name");if(r.error){$("matches").innerHTML="<div class=muted>"+esc(r.error.message)+"</div>";return}people=r.data||[]}
+$("search").oninput=()=>{let q=$("search").value.toLowerCase().trim();if(q.length<2){$("matches").innerHTML="";return}let m=people.filter(p=>(nameOf(p)+" "+(p.reference||"")).toLowerCase().includes(q)).slice(0,10);$("matches").innerHTML=m.map(p=>`<div class=person onclick="selectPerson('${esc(p.id)}')"><b>${esc(nameOf(p))}</b><br><span class=muted>${esc(p.reference||"")}</span></div>`).join("")||"<div class=muted>No matching person.</div>"}
+function selectPerson(id){selected=people.find(p=>p.id===id);if(!selected)return;$("selected").innerHTML=`<div class=card><b>Selected:</b> ${esc(nameOf(selected))}<br><span class=muted>${esc(selected.reference||"")}</span></div>`;$("matches").innerHTML="";$("search").value=nameOf(selected);$("details").style.display="block"}
+$("issued").value=new Date().toISOString().slice(0,10);
+async function issue(){
+ if(!selected){alert("Select a person.");return}
+ const token="VH-SIM-"+crypto.randomUUID().replaceAll("-","").toUpperCase();
+ const r=await sb.from("sim_ids").insert({person_id:selected.id,token,status:$("status").value,issued_at:new Date($("issued").value+"T00:00:00").toISOString(),expires_at:$("expires").value?new Date($("expires").value+"T23:59:59").toISOString():null}).select().single();
+ if(r.error){alert("Could not issue ID: "+r.error.message);return}
+ const id=r.data;
+ $("preview").innerHTML=`<div class=warning>VIBE-HOLDINGS</div><h2>${esc(nameOf(selected))}</h2><p><b>SIM ID</b><br>${esc(token)}</p><p><b>Reference:</b> ${esc(selected.reference||"—")}</p><p><b>Issued:</b> ${esc(id.issued_at)}</p><p><b>Expires:</b> ${esc(id.expires_at||"—")}</p><div id=qr class=qr></div><div class=warning>SIMULATION — NOT A GOVERNMENT ID</div>`;
+ $("printCard").style.display="block";
+ new QRCode($("qr"),{text:token,width:180,height:180});
+ window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+load();
+</script>
+</body>
+</html>
